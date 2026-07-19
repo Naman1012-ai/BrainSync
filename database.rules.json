@@ -1,0 +1,126 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid",
+        "profile": {
+          ".validate": "newData.hasChildren(['displayName', 'email'])"
+        },
+        "workspaces": {
+          "$workspaceId": {
+            ".validate": "newData.val() === 'owner' || newData.val() === 'admin' || newData.val() === 'member'"
+          }
+        }
+      }
+    },
+
+    "user_notifications": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "$notificationId": {
+          ".indexOn": ["timestamp", "read"],
+          ".validate": "newData.hasChildren(['message', 'timestamp', 'read'])"
+        }
+      }
+    },
+
+    "workspaces": {
+      "$workspaceId": {
+        ".read": "auth != null && (data.child('members/' + auth.uid).exists() || newData.child('members/' + auth.uid).exists() || data.child('metadata/ownerId').val() === auth.uid)",
+        ".write": "auth != null && (!data.exists() || data.child('members/' + auth.uid + '/role').val() === 'owner' || data.child('members/' + auth.uid + '/role').val() === 'admin' || data.child('metadata/ownerId').val() === auth.uid || newData.child('members/' + auth.uid).exists())",
+        "metadata": {
+          ".validate": "newData.hasChildren(['name', 'ownerId', 'inviteCode'])"
+        },
+        "settings": {
+          ".read": "auth != null && root.child('workspaces/' + $workspaceId + '/members/' + auth.uid).exists()",
+          ".write": "auth != null && (root.child('workspaces/' + $workspaceId + '/members/' + auth.uid + '/role').val() === 'owner' || root.child('workspaces/' + $workspaceId + '/members/' + auth.uid + '/role').val() === 'admin')"
+        },
+        "members": {
+          ".read": "auth != null && root.child('workspaces/' + $workspaceId + '/members/' + auth.uid).exists()",
+          "$uid": {
+            ".write": "auth != null && (auth.uid === $uid || root.child('workspaces/' + $workspaceId + '/members/' + auth.uid + '/role').val() === 'owner' || root.child('workspaces/' + $workspaceId + '/members/' + auth.uid + '/role').val() === 'admin')"
+          }
+        }
+      }
+    },
+
+    "ideas": {
+      "$workspaceId": {
+        ".indexOn": ["voteCount", "discussionCount", "createdAt", "importedFromPublicId", "projectStatus"],
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "$ideaId": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
+    },
+
+    "discussions": {
+      "$ideaId": {
+        ".indexOn": ["createdAt"],
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "$discussionId": {
+          ".validate": "newData.hasChildren(['message', 'createdBy', 'createdAt'])"
+        }
+      }
+    },
+
+    "blueprints": {
+      "$ideaId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      },
+      "$workspaceId": {
+        ".read": "auth != null && root.child('workspaces/' + $workspaceId + '/members/' + auth.uid).exists()",
+        ".write": "auth != null && root.child('workspaces/' + $workspaceId + '/members/' + auth.uid).exists() && root.child('workspaces/' + $workspaceId + '/metadata/selectedIdeaId').val() != null"
+      }
+    },
+
+    "tasks": {
+      "$workspaceId": {
+        ".indexOn": ["assignedTo", "status", "priority", "createdAt"],
+        ".read": "auth != null && root.child('workspaces/' + $workspaceId + '/members/' + auth.uid).exists()",
+        ".write": "auth != null && root.child('workspaces/' + $workspaceId + '/members/' + auth.uid).exists() && root.child('workspaces/' + $workspaceId + '/metadata/selectedIdeaId').val() != null",
+        "$taskId": {
+          ".validate": "newData.hasChildren(['title', 'status', 'createdBy', 'createdAt'])"
+        }
+      }
+    },
+
+    "votes": {
+      "$ideaId": {
+        ".read": "auth != null",
+        "$uid": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+
+    "publicIdeas": {
+      ".indexOn": ["voteCount", "createdAt"],
+      ".read": "auth != null",
+      "$ideaId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() && newData.child('createdBy').val() === auth.uid || data.exists() && data.child('createdBy').val() === auth.uid)"
+      }
+    },
+
+    "inviteCodes": {
+      ".read": "auth != null",
+      "$inviteCode": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
+    "globalStats": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}

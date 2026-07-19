@@ -1,0 +1,113 @@
+import { rtdbService } from './rtdbService';
+import { getErrorMessage } from '../utils/errorMessages';
+
+/**
+ * Service Layer abstraction for User Profile management in Firebase Realtime Database.
+ */
+export const profileService = {
+  /**
+   * Check if a user profile document exists in RTDB.
+   */
+  profileExists: async (uid) => {
+    try {
+      const data = await rtdbService.getData(`users/${uid}`);
+      return data !== null;
+    } catch (error) {
+      console.error('[profileService] profileExists error:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Automatically create a user profile in RTDB if it doesn't already exist.
+   */
+  createUserProfile: async (user, additionalData = {}) => {
+    if (!user || !user.uid) return null;
+
+    try {
+      const exists = await profileService.profileExists(user.uid);
+      if (exists) {
+        // Profile already exists; do not overwrite existing information
+        return await profileService.getUserProfile(user.uid);
+      }
+
+      const profileData = {
+        uid: user.uid,
+        displayName: user.displayName || additionalData.displayName || 'User',
+        email: user.email || '',
+        photoURL: user.photoURL || null,
+        joinedAt: rtdbService.getTimestamp(),
+        updatedAt: rtdbService.getTimestamp(),
+        organizationId: null,
+        profileCompleted: true,
+        onlineStatus: 'online',
+      };
+
+      await rtdbService.setData(`users/${user.uid}`, profileData);
+      return profileData;
+    } catch (error) {
+      console.error('[profileService] createUserProfile error:', error);
+      throw new Error(getErrorMessage(error.code || 'default'));
+    }
+  },
+
+  /**
+   * Fetch single user profile by UID.
+   */
+  getUserProfile: async (uid) => {
+    try {
+      return await rtdbService.getData(`users/${uid}`);
+    } catch (error) {
+      console.error('[profileService] getUserProfile error:', error);
+      throw new Error(getErrorMessage(error.code || 'default'));
+    }
+  },
+
+  /**
+   * Update specific user profile fields.
+   */
+  updateUserProfile: async (uid, data) => {
+    try {
+      const updates = {
+        ...data,
+        updatedAt: rtdbService.getTimestamp(),
+      };
+      await rtdbService.updateData(`users/${uid}`, updates);
+    } catch (error) {
+      console.error('[profileService] updateUserProfile error:', error);
+      throw new Error(getErrorMessage(error.code || 'default'));
+    }
+  },
+
+  /**
+   * Subscribe to real-time updates of a user's profile.
+   */
+  subscribeToProfile: (uid, callback) => {
+    return rtdbService.subscribe(`users/${uid}`, callback);
+  },
+
+  /**
+   * Setup presence tracking (`onlineStatus`) using RTDB .info/connected and onDisconnect hooks.
+   */
+  setupPresence: (uid) => {
+    if (!uid) return () => {};
+
+    // Setup onDisconnect hook to set onlineStatus: 'offline' when client disconnects
+    rtdbService.setupDisconnect(`users/${uid}`, {
+      onlineStatus: 'offline',
+      updatedAt: rtdbService.getTimestamp(),
+    });
+
+    // Subscribe to connection status
+    const unsubscribeConnected = rtdbService.subscribe('.info/connected', (connected) => {
+      if (connected === true) {
+        rtdbService.updateData(`users/${uid}`, {
+          onlineStatus: 'online',
+          updatedAt: rtdbService.getTimestamp(),
+        });
+      }
+    });
+
+    return unsubscribeConnected;
+  },
+};

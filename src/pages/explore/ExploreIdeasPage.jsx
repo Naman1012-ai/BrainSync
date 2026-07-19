@@ -1,0 +1,352 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import { publicIdeaService } from '../../services/publicIdeaService';
+import { orgService } from '../../services/orgService';
+import { PageHeader } from '../../components/layout/PageHeader';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Card } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Avatar } from '../../components/ui/Avatar';
+import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
+import { EmptyState } from '../../components/feedback/EmptyState';
+import { Toast } from '../../components/feedback/Toast';
+import { CreatePublicIdeaModal } from '../../features/ideas/CreatePublicIdeaModal';
+import { PublicIdeaDetailModal } from '../../features/ideas/PublicIdeaDetailModal';
+import { ImportToWorkspaceModal } from '../../features/ideas/ImportToWorkspaceModal';
+import { formatTimestamp, truncateText } from '../../utils/formatting';
+import {
+  Globe,
+  Plus,
+  Search,
+  MessageCircle,
+  ThumbsUp,
+  Sparkles,
+  UserCheck,
+  ArrowRight,
+  FolderPlus,
+  Trash2,
+} from 'lucide-react';
+import { ConfirmDialog } from '../../components/feedback/ConfirmDialog';
+
+export default function ExploreIdeasPage() {
+  const { user } = useAuth();
+
+  // Data States
+  const [publicIdeas, setPublicIdeas] = useState([]);
+  const [loadingPublic, setLoadingPublic] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Selected Public Idea for Detail Flashcard Modal & Import Modal
+  const [selectedPublicIdea, setSelectedPublicIdea] = useState(null);
+  const [importingIdea, setImportingIdea] = useState(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [userWorkspaces, setUserWorkspaces] = useState([]);
+
+  // Deletion State
+  const [deletingPublicIdea, setDeletingPublicIdea] = useState(null);
+  const [isDeletingPublic, setIsDeletingPublic] = useState(false);
+
+  // Newly Published Idea Highlight Tracker
+  const [newlyCreatedIdeaId, setNewlyCreatedIdeaId] = useState(null);
+  const newIdeaCardRef = useRef(null);
+
+  // Modals & Feedback
+  const [isCreatePublicIdeaOpen, setIsCreatePublicIdeaOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  // Subscribe to Public Ideas Feed
+  useEffect(() => {
+    setLoadingPublic(true);
+    const unsubscribe = publicIdeaService.subscribeToPublicIdeas((ideas) => {
+      setPublicIdeas(ideas);
+      setLoadingPublic(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleConfirmDeletePublic = async () => {
+    if (!deletingPublicIdea) return;
+    setIsDeletingPublic(true);
+    try {
+      await publicIdeaService.deletePublicIdea(deletingPublicIdea.ideaId);
+      setToastMessage('✓ Idea deleted successfully.');
+      setDeletingPublicIdea(null);
+    } catch (err) {
+      setToastMessage(err.message || 'Unable to delete idea. Please try again.');
+    } finally {
+      setIsDeletingPublic(false);
+    }
+  };
+
+  // Fetch active workspaces for authenticated user
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+
+    orgService.getUserOrganizations(user.uid).then((orgs) => {
+      if (active) {
+        const activeMemberOrgs = (orgs || []).filter((o) => !o.isDeleted && o.isMember);
+        setUserWorkspaces(activeMemberOrgs);
+      }
+    }).catch((err) => {
+      console.warn('[ExploreIdeasPage] Error loading user workspaces:', err);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  // Auto Scroll & Highlight newly created public idea card
+  useEffect(() => {
+    if (newlyCreatedIdeaId && newIdeaCardRef.current) {
+      newIdeaCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const timer = setTimeout(() => {
+        setNewlyCreatedIdeaId(null);
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [newlyCreatedIdeaId, publicIdeas]);
+
+  const handlePublicIdeaPublished = (createdIdea) => {
+    if (createdIdea && createdIdea.ideaId) {
+      setNewlyCreatedIdeaId(createdIdea.ideaId);
+      setToastMessage('Proposal published live on the public feed!');
+    }
+  };
+
+  // Filter Public Ideas
+  const filteredPublicIdeas = useMemo(() => {
+    if (!searchQuery.trim()) return publicIdeas;
+    const q = searchQuery.toLowerCase();
+    return publicIdeas.filter(
+      (idea) =>
+        idea.title.toLowerCase().includes(q) ||
+        idea.problemStatement.toLowerCase().includes(q) ||
+        (idea.techStack && idea.techStack.toLowerCase().includes(q)) ||
+        (idea.category && idea.category.toLowerCase().includes(q))
+    );
+  }, [publicIdeas, searchQuery]);
+
+  return (
+    <div className="space-y-8 max-w-7xl mx-auto px-4 py-8">
+      {/* Header Toolbar */}
+      <PageHeader
+        title="Explore Public Ideas"
+        subtitle="Discover, vote, and suggest technical iterations on community proposal drafts"
+        action={
+          <Button
+            variant="primary"
+            size="sm"
+            icon={<Plus className="h-4 w-4" />}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+            onClick={() => setIsCreatePublicIdeaOpen(true)}
+          >
+            + Post Public Proposal
+          </Button>
+        }
+      />
+
+      {/* Search Controls */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div className="relative w-full sm:w-96">
+          <Input
+            placeholder="Search public ideas by title, problem, or tech stack..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+        </div>
+
+        <div className="text-xs font-semibold text-slate-400 flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+          <Globe className="h-3.5 w-3.5 text-indigo-500 animate-pulse" />
+          <span>Global Live Feed</span>
+        </div>
+      </div>
+
+      {/* Feed Grid */}
+      {loadingPublic ? (
+        <LoadingSkeleton variant="card" count={3} />
+      ) : filteredPublicIdeas.length === 0 ? (
+        <EmptyState
+          icon={<Globe className="h-8 w-8 text-indigo-500" />}
+          title="No Public Proposals Found"
+          description="Be the first innovator to share an open proposal with the global community!"
+          action={
+            <Button variant="primary" onClick={() => setIsCreatePublicIdeaOpen(true)}>
+              Post Public Idea
+            </Button>
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPublicIdeas.map((idea) => {
+            const isAuthor = user && user.uid === idea.authorId;
+            const isNewlyCreated = idea.ideaId === newlyCreatedIdeaId;
+
+            return (
+              <div
+                key={idea.ideaId}
+                ref={isNewlyCreated ? newIdeaCardRef : null}
+                onClick={() => setSelectedPublicIdea(idea)}
+                className={`cursor-pointer transition-all duration-500 rounded-2xl ${
+                  isNewlyCreated
+                    ? 'ring-4 ring-indigo-500 shadow-xl shadow-indigo-100 scale-[1.02]'
+                    : ''
+                }`}
+              >
+                <Card hover className="flex flex-col justify-between h-full p-6 bg-white border border-slate-200">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant="info">{idea.category || 'General'}</Badge>
+                        {isNewlyCreated && (
+                          <Badge
+                            variant="success"
+                            className="bg-emerald-500 text-white animate-pulse flex items-center gap-1"
+                          >
+                            <Sparkles className="h-3 w-3" /> NEW
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Card Header Actions */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {user && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setImportingIdea(idea);
+                              setIsImportModalOpen(true);
+                            }}
+                            className="flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-colors border border-indigo-100"
+                            title="Import this idea into a workspace"
+                          >
+                            <FolderPlus className="h-3.5 w-3.5 text-indigo-600" />
+                            <span>Import</span>
+                          </button>
+                        )}
+
+                        {isAuthor && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingPublicIdea(idea);
+                            }}
+                            className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                            title="Delete Public Proposal"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2 hover:text-indigo-600 transition-colors">
+                      {idea.title}
+                    </h3>
+                    <p className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed">
+                      {truncateText(idea.problemStatement, 180)}
+                    </p>
+
+                    {idea.techStack && (
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {idea.techStack
+                          .split(',')
+                          .map((tech) => tech.trim())
+                          .filter(Boolean)
+                          .slice(0, 3)
+                          .map((tech, i) => (
+                            <span
+                              key={i}
+                              className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-mono text-slate-600"
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Avatar name={isAuthor ? user.displayName || user.email : idea.authorName} size="sm" />
+                      {isAuthor ? (
+                        <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <UserCheck className="h-3 w-3 text-indigo-600" /> Created by You
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold text-slate-800 truncate max-w-[120px]">
+                          {idea.authorName}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs font-medium text-slate-500">
+                      <span className="flex items-center gap-1 font-semibold text-indigo-600">
+                        <ThumbsUp className="h-3.5 w-3.5" /> {idea.voteCount || 0}
+                      </span>
+                      <span className="flex items-center gap-1 font-bold text-indigo-600 hover:underline">
+                        <MessageCircle className="h-3.5 w-3.5 text-indigo-500" /> Suggest
+                        <ArrowRight className="h-3 w-3 ml-0.5" />
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Public Idea Flashcard & Suggestion Modal */}
+      <PublicIdeaDetailModal
+        isOpen={Boolean(selectedPublicIdea)}
+        idea={selectedPublicIdea}
+        onClose={() => setSelectedPublicIdea(null)}
+        onToast={(msg) => setToastMessage(msg)}
+      />
+
+      {/* Direct Card Import Modal */}
+      <ImportToWorkspaceModal
+        isOpen={isImportModalOpen}
+        idea={importingIdea}
+        workspaces={userWorkspaces}
+        onClose={() => {
+          setIsImportModalOpen(false);
+          setImportingIdea(null);
+        }}
+        onToast={(msg) => setToastMessage(msg)}
+      />
+
+      {/* Public Idea Deletion Confirmation Modal */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingPublicIdea)}
+        title="Delete Public Idea?"
+        description={`Are you sure you want to remove "${deletingPublicIdea?.title}"? This action will permanently remove this public proposal and all its votes.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={isDeletingPublic}
+        onConfirm={handleConfirmDeletePublic}
+        onCancel={() => setDeletingPublicIdea(null)}
+      />
+
+      {/* Modals */}
+      <CreatePublicIdeaModal
+        isOpen={isCreatePublicIdeaOpen}
+        onClose={() => setIsCreatePublicIdeaOpen(false)}
+        onSuccess={handlePublicIdeaPublished}
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        type="success"
+        message={toastMessage}
+        isOpen={Boolean(toastMessage)}
+        onClose={() => setToastMessage('')}
+      />
+    </div>
+  );
+}

@@ -1,0 +1,89 @@
+import React, { useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { X } from 'lucide-react';
+import { cn } from '../../utils/cn';
+
+export function Modal({
+  isOpen = false,
+  onClose,
+  title = '',
+  size = 'md',
+  children,
+  className = '',
+}) {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const sizes = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-2xl',
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+    >
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity animate-in fade-in"
+        onClick={onClose}
+      />
+
+      {/* Modal Card */}
+      <div
+        className={cn(
+          'relative z-10 w-full rounded-2xl bg-white shadow-xl transition-all animate-in zoom-in-95',
+          sizes[size],
+          className
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <h3 id="modal-title" className="text-lg font-semibold text-slate-900">
+            {title}
+          </h3>
+          <button
+            onClick={onClose}
+            aria-label="Close modal"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 py-5 max-h-[80vh] overflow-y-auto">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+Modal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  title: PropTypes.string,
+  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  children: PropTypes.node.isRequired,
+  className: PropTypes.string,
+};

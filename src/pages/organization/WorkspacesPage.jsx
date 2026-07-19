@@ -1,0 +1,216 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import { orgService } from '../../services/orgService';
+import { PageHeader } from '../../components/layout/PageHeader';
+import { Modal } from '../../components/ui/Modal';
+import { Button } from '../../components/ui/Button';
+import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
+import { EmptyState } from '../../components/feedback/EmptyState';
+import { Toast } from '../../components/feedback/Toast';
+import { OrgCard } from '../../features/organizations/OrgCard';
+import { CreateOrgForm } from '../../features/organizations/CreateOrgForm';
+import { JoinOrgForm } from '../../features/organizations/JoinOrgForm';
+import { Card } from '../../components/ui/Card';
+import { Plus, LogIn, Users, AlertTriangle, Clock, RotateCcw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+export default function WorkspacesPage() {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  // Data States
+  const [organizations, setOrganizations] = useState([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(true);
+
+  // Modals & Feedback
+  const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false);
+  const [isJoinOrgOpen, setIsJoinOrgOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  // Load Workspaces
+  const loadWorkspaces = useCallback(async () => {
+    if (!user) {
+      setLoadingOrgs(false);
+      return;
+    }
+    setLoadingOrgs(true);
+    try {
+      const orgs = await orgService.getUserOrganizations(user.uid);
+      setOrganizations(orgs);
+    } catch (err) {
+      console.error('[WorkspacesPage] Load workspaces error:', err);
+    } finally {
+      setLoadingOrgs(false);
+    }
+  }, [user]);
+
+  // Load Workspaces on Auth Ready
+  useEffect(() => {
+    if (!authLoading && user) {
+      loadWorkspaces();
+    } else if (!authLoading && !user) {
+      setLoadingOrgs(false);
+    }
+  }, [user, authLoading, loadWorkspaces]);
+
+  const handleWorkspaceCreated = (newOrg) => {
+    setIsCreateOrgOpen(false);
+    setToastMessage('Workspace created successfully.');
+    if (newOrg && newOrg.orgId) {
+      setOrganizations((prev) => [newOrg, ...prev]);
+      loadWorkspaces();
+      navigate(`/workspaces/${newOrg.orgId}/ideas`);
+    }
+  };
+
+  const handleRestoreWorkspace = async (orgId) => {
+    try {
+      await orgService.restoreWorkspace(orgId);
+      setToastMessage('Workspace restored successfully.');
+      loadWorkspaces();
+    } catch (err) {
+      setToastMessage('Failed to restore workspace: ' + err.message);
+    }
+  };
+
+  const activeWorkspaces = organizations.filter((org) => !org.isDeleted);
+  const pendingDeletionWorkspaces = organizations.filter((org) => org.isDeleted);
+
+  return (
+    <div className="space-y-8 max-w-7xl mx-auto px-4 py-8">
+      {/* Header Toolbar */}
+      <PageHeader
+        title="Hackathon Workspaces"
+        subtitle="Manage private spaces to coordinate ideas, mvp consensus voting, and sprint execution boards"
+        action={
+          <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<LogIn className="h-4 w-4" />}
+              onClick={() => setIsJoinOrgOpen(true)}
+            >
+              Join Workspace
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Plus className="h-4 w-4" />}
+              onClick={() => setIsCreateOrgOpen(true)}
+            >
+              Create Workspace
+            </Button>
+          </div>
+        }
+      />
+
+      {/* Grid listing */}
+      <div className="space-y-10">
+        {loadingOrgs || authLoading ? (
+          <LoadingSkeleton variant="card" count={3} />
+        ) : (
+          <>
+            {activeWorkspaces.length === 0 ? (
+              <EmptyState
+                icon={<Users className="h-8 w-8 text-indigo-500" />}
+                title="No Active Workspaces Found"
+                description="Create a new private workspace for your hackathon team, or join an existing one using an 8-character invite code."
+                action={
+                  <div className="flex items-center gap-3">
+                    <Button variant="secondary" onClick={() => setIsJoinOrgOpen(true)}>
+                      Join Workspace
+                    </Button>
+                    <Button variant="primary" onClick={() => setIsCreateOrgOpen(true)}>
+                      Create Workspace
+                    </Button>
+                  </div>
+                }
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activeWorkspaces.map((org) => (
+                  <OrgCard
+                    key={org.orgId}
+                    org={org}
+                    currentUid={user?.uid || ''}
+                    onJoinClick={() => setIsJoinOrgOpen(true)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {pendingDeletionWorkspaces.length > 0 && (
+              <div className="space-y-4 pt-6 border-t border-slate-200">
+                <div className="flex items-center gap-2 text-rose-600 animate-pulse">
+                  <AlertTriangle className="h-5 w-5" />
+                  <h3 className="font-bold text-slate-800">Pending Deletion (Grace Period)</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {pendingDeletionWorkspaces.map((org) => {
+                    const daysLeft = Math.max(1, Math.round((org.scheduledDeletionAt - Date.now()) / (24 * 60 * 60 * 1000)));
+                    return (
+                      <Card key={org.orgId} className="p-6 border border-rose-200 bg-rose-50/10 flex flex-col justify-between h-48 hover:shadow-md transition-shadow">
+                        <div>
+                          <h4 className="font-bold text-slate-900 truncate">{org.name}</h4>
+                          <p className="text-xs text-slate-500 mt-1">{org.hackathonName}</p>
+                          <div className="mt-4 flex items-center gap-1 text-[11px] font-semibold text-rose-600">
+                            <Clock className="h-3.5 w-3.5" /> Deletes permanently in {daysLeft} days
+                          </div>
+                        </div>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleRestoreWorkspace(org.orgId)}
+                          icon={<RotateCcw className="h-3.5 w-3.5" />}
+                          className="border-rose-200 text-rose-700 bg-white hover:bg-rose-50 w-full font-bold"
+                        >
+                          Restore Workspace
+                        </Button>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Modals */}
+      <Modal
+        isOpen={isCreateOrgOpen}
+        onClose={() => setIsCreateOrgOpen(false)}
+        title="Create Hackathon Workspace"
+        size="lg"
+      >
+        <CreateOrgForm onSuccess={handleWorkspaceCreated} />
+      </Modal>
+
+      <Modal
+        isOpen={isJoinOrgOpen}
+        onClose={() => setIsJoinOrgOpen(false)}
+        title="Join Hackathon Workspace"
+        size="md"
+      >
+        <JoinOrgForm
+          onSuccess={(orgId) => {
+            setIsJoinOrgOpen(false);
+            setToastMessage('Joined workspace successfully!');
+            loadWorkspaces();
+            if (orgId) {
+              navigate(`/workspaces/${orgId}/ideas`);
+            }
+          }}
+        />
+      </Modal>
+
+      {/* Toast Notification */}
+      <Toast
+        type="success"
+        message={toastMessage}
+        isOpen={Boolean(toastMessage)}
+        onClose={() => setToastMessage('')}
+      />
+    </div>
+  );
+}
