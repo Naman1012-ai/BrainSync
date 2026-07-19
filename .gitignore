@@ -34,3 +34,5 @@ dist-ssr
 .firebase
 .firebaserc
 documents
+database.rules.json
+firebase.json
