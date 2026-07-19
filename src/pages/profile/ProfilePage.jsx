@@ -360,6 +360,24 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
+            {Boolean(
+              userProfile?.role === 'superadmin' ||
+              userProfile?.role === 'admin' ||
+              userProfile?.isAdmin === true ||
+              ((import.meta.env.VITE_ADMIN_EMAIL || 'admin@brainsync.com').toLowerCase().trim() === (user?.email || '').toLowerCase().trim())
+            ) && (
+              <Link to="/admin/dashboard">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<ShieldCheck className="h-4 w-4 text-purple-600" />}
+                  className="bg-purple-50 hover:bg-purple-100 text-purple-900 border-purple-200 font-extrabold text-xs"
+                >
+                  Admin Portal
+                </Button>
+              </Link>
+            )}
+
             <Button
               variant="primary"
               size="sm"

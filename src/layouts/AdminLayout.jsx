@@ -86,10 +86,11 @@ export function AdminLayout() {
               <Avatar name={user?.displayName || user?.email} size="sm" />
               <button
                 onClick={() => navigate('/dashboard')}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white transition-colors bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800"
+                className="inline-flex items-center gap-1.5 text-xs font-extrabold text-indigo-200 hover:text-white transition-all bg-indigo-950/80 hover:bg-indigo-900 px-3.5 py-1.5 rounded-xl border border-indigo-700/60 shadow-sm"
+                title="Transfer to normal user platform dashboard"
               >
-                <LogOut className="h-3.5 w-3.5 text-slate-400" />
-                <span className="hidden md:inline">Exit Admin</span>
+                <LayoutDashboard className="h-3.5 w-3.5 text-indigo-400" />
+                <span>User Dashboard</span>
               </button>
             </div>
           </div>

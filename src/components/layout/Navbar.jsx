@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useUser } from '../../hooks/useUser';
 import { useToast } from '../../hooks/useToast';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -14,16 +15,27 @@ import {
   Briefcase,
   LayoutDashboard,
   Flag,
+  ShieldCheck,
 } from 'lucide-react';
 import { ReportIssueModal } from '../../features/reports/ReportIssueModal';
 
 export function Navbar({ onMobileMenuToggle = () => {} }) {
   const { user, signOut } = useAuth();
+  const { userProfile } = useUser();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+  const adminEnvEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@brainsync.com').toLowerCase().trim();
+  const userEmail = (user?.email || '').toLowerCase().trim();
+  const isAdmin = Boolean(
+    userProfile?.role === 'superadmin' ||
+    userProfile?.role === 'admin' ||
+    userProfile?.isAdmin === true ||
+    (adminEnvEmail && userEmail === adminEnvEmail)
+  );
 
   const handleSignOut = async () => {
     try {
@@ -105,59 +117,90 @@ export function Navbar({ onMobileMenuToggle = () => {} }) {
         {/* User Profile & Action Menu */}
         <div className="flex items-center gap-3">
           {user ? (
-            <div className="relative">
-              <button
-                onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2.5 rounded-full p-1 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                aria-label="User profile menu"
-              >
-                <Avatar name={user.displayName || user.email} size="sm" />
-                <span className="hidden sm:inline-block text-sm font-semibold text-slate-700 max-w-[120px] truncate">
-                  {user.displayName || user.email.split('@')[0]}
-                </span>
-              </button>
-
-              {/* User Dropdown Menu */}
-              {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl z-50">
-                  <div className="px-3 py-2 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-900 truncate">
-                      {user.displayName || 'User'}
-                    </p>
-                    <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
-                  </div>
-
-                  <Link
-                    to="/profile"
-                    onClick={() => setIsUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-                  >
-                    <User className="h-4 w-4 text-slate-400" />
-                    <span>My Profile</span>
-                  </Link>
-
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      setIsReportModalOpen(true);
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 transition-colors"
-                  >
-                    <Flag className="h-4 w-4 text-purple-600" />
-                    <span>Report Issue</span>
-                  </button>
-
-                  <div className="my-1 border-t border-slate-100" />
-
-                  <button
-                    onClick={handleSignOut}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
-                  >
-                    <LogOut className="h-4 w-4 text-rose-500" />
-                    <span>Sign Out</span>
-                  </button>
-                </div>
+            <div className="flex items-center gap-2">
+              {/* Admin Portal Toggle Button */}
+              {isAdmin && (
+                <Link
+                  to="/admin/dashboard"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-all shadow-sm hover:shadow"
+                >
+                  <ShieldCheck className="h-4 w-4 text-purple-600" />
+                  <span>Admin Portal</span>
+                </Link>
               )}
+
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-2.5 rounded-full p-1 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  aria-label="User profile menu"
+                >
+                  <Avatar name={user.displayName || user.email} size="sm" />
+                  <span className="hidden sm:inline-block text-sm font-semibold text-slate-700 max-w-[120px] truncate">
+                    {user.displayName || user.email.split('@')[0]}
+                  </span>
+                </button>
+
+                {/* User Dropdown Menu */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl z-50">
+                    <div className="px-3 py-2 border-b border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold text-slate-900 truncate">
+                          {user.displayName || 'User'}
+                        </p>
+                        {isAdmin && (
+                          <span className="text-[9px] font-mono font-bold uppercase bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded">
+                            ADMIN
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
+                    </div>
+
+                    {isAdmin && (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-extrabold text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors my-1 border border-purple-100"
+                      >
+                        <ShieldCheck className="h-4 w-4 text-purple-600" />
+                        <span>Switch to Admin Portal</span>
+                      </Link>
+                    )}
+
+                    <Link
+                      to="/profile"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                    >
+                      <User className="h-4 w-4 text-slate-400" />
+                      <span>My Profile</span>
+                    </Link>
+
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        setIsReportModalOpen(true);
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 transition-colors"
+                    >
+                      <Flag className="h-4 w-4 text-purple-600" />
+                      <span>Report Issue</span>
+                    </button>
+
+                    <div className="my-1 border-t border-slate-100" />
+
+                    <button
+                      onClick={handleSignOut}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
+                    >
+                      <LogOut className="h-4 w-4 text-rose-500" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-2">
