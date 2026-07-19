@@ -44,9 +44,19 @@ export function SignInForm() {
     setIsSubmitting(true);
 
     try {
-      await signIn(email, password);
-      toast.success('Signed in successfully!');
-      navigate(redirectTarget, { replace: true });
+      const signedUser = await signIn(email, password);
+      const adminEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@brainsync.com').toLowerCase().trim();
+      const signedInEmail = (signedUser?.email || email).toLowerCase().trim();
+      const isAdminLogin = Boolean(adminEmail && signedInEmail === adminEmail);
+
+      const targetUrl = isAdminLogin
+        ? '/admin/dashboard'
+        : searchParams.get('returnUrl')
+        ? decodeURIComponent(searchParams.get('returnUrl'))
+        : '/dashboard';
+
+      toast.success(isAdminLogin ? 'Welcome Super Admin! Opening Admin Portal...' : 'Signed in successfully!');
+      navigate(targetUrl, { replace: true });
     } catch (err) {
       const msg = getErrorMessage(err.code || err.message);
       setServerError(msg);
@@ -62,8 +72,18 @@ export function SignInForm() {
     try {
       const user = await signInWithGoogle();
       if (user) {
-        toast.success('Signed in with Google successfully!');
-        navigate(redirectTarget, { replace: true });
+        const adminEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@brainsync.com').toLowerCase().trim();
+        const signedInEmail = (user.email || '').toLowerCase().trim();
+        const isAdminLogin = Boolean(adminEmail && signedInEmail === adminEmail);
+
+        const targetUrl = isAdminLogin
+          ? '/admin/dashboard'
+          : searchParams.get('returnUrl')
+          ? decodeURIComponent(searchParams.get('returnUrl'))
+          : '/dashboard';
+
+        toast.success(isAdminLogin ? 'Welcome Super Admin! Opening Admin Portal...' : 'Signed in with Google successfully!');
+        navigate(targetUrl, { replace: true });
       }
     } catch (err) {
       const msg = getErrorMessage(err.code || err.message);

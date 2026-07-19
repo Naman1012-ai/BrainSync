@@ -6,8 +6,10 @@ import { ToastProvider } from './contexts/ToastContext';
 import { AuthLayout } from './layouts/AuthLayout';
 import { AppLayout } from './layouts/AppLayout';
 import { OrgLayout } from './layouts/OrgLayout';
+import { AdminLayout } from './layouts/AdminLayout';
 import { AuthGuard } from './features/auth/AuthGuard';
 import { PublicOnlyGuard } from './features/auth/PublicOnlyGuard';
+import { AdminGuard } from './features/admin/AdminGuard';
 import { Spinner } from './components/feedback/Spinner';
 import { ErrorBoundary } from './components/feedback/ErrorBoundary';
 
@@ -28,6 +30,26 @@ const ProgressDashboardPage = lazy(() => import('./pages/organization/ProgressDa
 const MembersPage = lazy(() => import('./pages/organization/MembersPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SettingsPage = lazy(() => import('./pages/organization/SettingsPage'));
+
+// Admin Pages
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
+const AdminUserDetailPage = lazy(() => import('./pages/admin/AdminUserDetailPage'));
+const AdminWorkspacesPage = lazy(() => import('./pages/admin/AdminWorkspacesPage'));
+const AdminWorkspaceDetailPage = lazy(() => import('./pages/admin/AdminWorkspaceDetailPage'));
+const AdminIdeasPage = lazy(() => import('./pages/admin/AdminIdeasPage'));
+const AdminIdeaDetailPage = lazy(() => import('./pages/admin/AdminIdeaDetailPage'));
+const AdminMvpPage = lazy(() => import('./pages/admin/AdminMvpPage'));
+const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage'));
+const AdminReportDetailPage = lazy(() => import('./pages/admin/AdminReportDetailPage'));
+const AdminModerationPage = lazy(() => import('./pages/admin/AdminModerationPage'));
+const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'));
+const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'));
+const AdminAuditPage = lazy(() => import('./pages/admin/AdminAuditPage'));
+const AdminRolesPage = lazy(() => import('./pages/admin/AdminRolesPage'));
+const AdminSecurityPage = lazy(() => import('./pages/admin/AdminSecurityPage'));
+const AdminOperationsPage = lazy(() => import('./pages/admin/AdminOperationsPage'));
+const AdminAnnouncementsPage = lazy(() => import('./pages/admin/AdminAnnouncementsPage'));
 
 export function App() {
   return (
@@ -64,7 +86,7 @@ export function App() {
                   <Route path="/profile" element={<ProfilePage />} />
                 </Route>
 
-                  {/* Organization/Workspace-Scoped Routes */}
+                {/* Organization/Workspace-Scoped Routes */}
                 <Route path="/org/:orgId" element={<ErrorBoundary><OrgLayout /></ErrorBoundary>}>
                   <Route index element={<OrgDashboardPage />} />
                   <Route path="ideas" element={<IdeaBoardPage />} />
@@ -89,6 +111,45 @@ export function App() {
                   </Route>
                   <Route path="members" element={<MembersPage />} />
                   <Route path="settings" element={<SettingsPage />} />
+                </Route>
+
+                {/* Admin Portal Protected Routes */}
+                <Route path="/admin" element={<ErrorBoundary><AdminGuard /></ErrorBoundary>}>
+                  <Route element={<AdminLayout />}>
+                    <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                    <Route path="dashboard" element={<AdminDashboardPage />} />
+                    <Route path="users" element={<AdminUsersPage />} />
+                    <Route path="users/:userId" element={<AdminUserDetailPage />} />
+                    <Route path="workspaces" element={<AdminWorkspacesPage />} />
+                    <Route path="workspaces/:workspaceId" element={<AdminWorkspaceDetailPage />} />
+                    <Route path="ideas" element={<AdminIdeasPage />} />
+                    <Route path="ideas/:ideaId" element={<AdminIdeaDetailPage />} />
+                    <Route path="mvp" element={<AdminMvpPage />} />
+                    <Route path="reports" element={<AdminReportsPage />} />
+                    <Route path="reports/:reportId" element={<AdminReportDetailPage />} />
+                    <Route path="moderation" element={<AdminModerationPage />} />
+                    <Route path="moderation/queue" element={<AdminModerationPage />} />
+                    <Route path="moderation/history" element={<AdminModerationPage />} />
+                    <Route path="analytics" element={<AdminAnalyticsPage />} />
+                    <Route path="analytics/*" element={<AdminAnalyticsPage />} />
+                    <Route path="settings" element={<AdminSettingsPage />} />
+                    <Route path="settings/*" element={<AdminSettingsPage />} />
+                    <Route path="audit" element={<AdminAuditPage />} />
+                    <Route path="audit/:logId" element={<AdminAuditPage />} />
+                    <Route path="roles" element={<AdminRolesPage />} />
+                    <Route path="roles/:roleId" element={<AdminRolesPage />} />
+                    <Route path="permissions" element={<AdminRolesPage />} />
+                    <Route path="security" element={<AdminSecurityPage />} />
+                    <Route path="security/*" element={<AdminSecurityPage />} />
+                    <Route path="operations" element={<AdminOperationsPage />} />
+                    <Route path="announcements" element={<AdminAnnouncementsPage />} />
+                    <Route path="notifications" element={<AdminOperationsPage />} />
+                    <Route path="system-health" element={<AdminOperationsPage />} />
+                    <Route path="releases" element={<AdminOperationsPage />} />
+                    <Route path="feature-rollout" element={<AdminOperationsPage />} />
+                    <Route path="maintenance" element={<AdminOperationsPage />} />
+                    <Route path="production" element={<AdminOperationsPage />} />
+                  </Route>
                 </Route>
               </Route>
 

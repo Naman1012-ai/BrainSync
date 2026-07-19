@@ -14,6 +14,7 @@ import { Spinner } from '../../components/feedback/Spinner';
 import { Toast } from '../../components/feedback/Toast';
 import { ConfirmDialog } from '../../components/feedback/ConfirmDialog';
 import { EditProfileModal } from '../../features/profile/EditProfileModal';
+import { UserReportsList } from '../../features/reports/UserReportsList';
 import { formatTimestamp } from '../../utils/formatting';
 import {
   Pencil,
@@ -623,6 +624,9 @@ export default function ProfilePage() {
               })}
             </div>
           </Card>
+
+          {/* 6. My Submitted Reports */}
+          <UserReportsList />
         </div>
 
         {/* Right Column (1 col): Account Info, Notifications, Security & Danger Zone */}

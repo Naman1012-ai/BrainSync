@@ -13,7 +13,9 @@ import {
   Globe,
   Briefcase,
   LayoutDashboard,
+  Flag,
 } from 'lucide-react';
+import { ReportIssueModal } from '../../features/reports/ReportIssueModal';
 
 export function Navbar({ onMobileMenuToggle = () => {} }) {
   const { user, signOut } = useAuth();
@@ -21,6 +23,7 @@ export function Navbar({ onMobileMenuToggle = () => {} }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -134,6 +137,19 @@ export function Navbar({ onMobileMenuToggle = () => {} }) {
                   </Link>
 
                   <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      setIsReportModalOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 transition-colors"
+                  >
+                    <Flag className="h-4 w-4 text-purple-600" />
+                    <span>Report Issue</span>
+                  </button>
+
+                  <div className="my-1 border-t border-slate-100" />
+
+                  <button
                     onClick={handleSignOut}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
                   >
@@ -159,6 +175,12 @@ export function Navbar({ onMobileMenuToggle = () => {} }) {
           )}
         </div>
       </div>
+
+      {/* Global Report Issue Modal */}
+      <ReportIssueModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+      />
     </header>
   );
 }
