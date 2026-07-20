@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { usePlatformSettings } from '../../hooks/usePlatformSettings';
 import { orgService } from '../../services/orgService';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
@@ -13,6 +14,7 @@ import { Plus } from 'lucide-react';
 export function CreateOrgForm({ onSuccess = null }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { canCreateWorkspace } = usePlatformSettings();
   const navigate = useNavigate();
 
   const [name, setName] = useState('');
@@ -29,6 +31,13 @@ export function CreateOrgForm({ onSuccess = null }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setServerError('');
+
+    const check = canCreateWorkspace();
+    if (!check.allowed) {
+      setServerError(check.reason);
+      toast.error(check.reason);
+      return;
+    }
 
     const val = validateOrgName(name);
     if (!val.valid) {

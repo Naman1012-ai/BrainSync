@@ -221,9 +221,17 @@ export const adminService = {
   /**
    * Create Global Announcement (Admin Only)
    */
+  /**
+   * Create Global Announcement (Admin Only)
+   */
   createAnnouncement: async (adminUid, adminName, payload) => {
     const id = `anc_${Date.now()}`;
     const timestamp = Date.now();
+    let expiresAt = null;
+
+    if (payload.expireHours && Number(payload.expireHours) > 0) {
+      expiresAt = timestamp + Number(payload.expireHours) * 3600 * 1000;
+    }
 
     const data = {
       id,
@@ -233,12 +241,83 @@ export const adminService = {
       priority: payload.priority || 'Normal',
       targetAudience: payload.targetAudience || 'Entire Platform',
       isPinned: Boolean(payload.isPinned),
+      expiresAt,
       createdBy: adminName,
       createdAt: timestamp,
     };
 
     await rtdbService.setData(`announcements/${id}`, data);
     await adminService.logAdminAudit(adminUid, adminName, 'CREATE_ANNOUNCEMENT', id, `Created announcement "${payload.title}"`);
+  },
+
+  /**
+   * Dismiss an announcement for a specific user (does not affect other users or delete from Firebase).
+   */
+  dismissAnnouncementForUser: async (uid, announcementId) => {
+    if (!uid || !announcementId) return;
+    const timestamp = Date.now();
+    await rtdbService.setData(`user_announcements/${uid}/${announcementId}`, {
+      dismissed: true,
+      dismissedAt: timestamp,
+    });
+  },
+
+  /**
+   * Real-time subscription to active announcements tailored for a specific user.
+   */
+  subscribeToUserAnnouncements: (uid, userContext, callback) => {
+    if (!uid) {
+      callback([]);
+      return () => {};
+    }
+
+    let rawAnnouncements = {};
+    let userDismissedMap = {};
+
+    const computeAndEmit = () => {
+      const now = Date.now();
+      const list = Object.values(rawAnnouncements || {}).filter((anc) => {
+        if (!anc || anc.isDeleted) return false;
+        // Check Expiration
+        if (anc.expiresAt && now > anc.expiresAt) return false;
+        // Check User Dismissal
+        if (userDismissedMap[anc.id]?.dismissed) return false;
+
+        // Check Target Audience
+        if (anc.targetAudience && anc.targetAudience !== 'Entire Platform') {
+          if (anc.targetAudience === 'Verified Users' && !userContext?.emailVerified) return false;
+          if (anc.targetAudience === 'Workspace Owners' && !userContext?.isOwner) return false;
+          if (anc.targetAudience === 'Workspace Members' && !userContext?.isMember) return false;
+          if (anc.targetAudience === 'Administrators' && !userContext?.isAdmin) return false;
+        }
+
+        return true;
+      });
+
+      // Sort Pinned to top, then newest first
+      list.sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return (b.createdAt || 0) - (a.createdAt || 0);
+      });
+
+      callback(list);
+    };
+
+    const unsubGlobal = rtdbService.subscribe('announcements', (data) => {
+      rawAnnouncements = data || {};
+      computeAndEmit();
+    });
+
+    const unsubUser = rtdbService.subscribe(`user_announcements/${uid}`, (data) => {
+      userDismissedMap = data || {};
+      computeAndEmit();
+    });
+
+    return () => {
+      unsubGlobal();
+      unsubUser();
+    };
   },
 
   /**

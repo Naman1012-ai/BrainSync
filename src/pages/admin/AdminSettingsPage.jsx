@@ -15,7 +15,6 @@ import {
   AlertOctagon,
   CheckCircle2,
   Save,
-  RotateCcw,
   Download,
   Terminal,
   Layers,
@@ -49,7 +48,7 @@ export default function AdminSettingsPage() {
         currentUser.displayName || currentUser.email,
         settings
       );
-      setToastMsg('Platform configuration saved successfully.');
+      setToastMsg('Platform configuration saved successfully across all services.');
     } catch (err) {
       setToastMsg(err.message || 'Failed to save settings.');
     } finally {
@@ -86,7 +85,7 @@ export default function AdminSettingsPage() {
             <Settings className="h-6 w-6 text-purple-400" /> Platform Settings & System Configuration
           </h1>
           <p className="text-xs text-slate-400 mt-1 font-medium">
-            Manage global operational variables, authentication constraints, maintenance modes, and feature flags without code modifications.
+            Manage global operational variables, workspace limits, idea flags, maintenance modes, and feature toggles.
           </p>
         </div>
 
@@ -243,7 +242,169 @@ export default function AdminSettingsPage() {
         </Card>
       )}
 
-      {/* Tab 3: Maintenance Mode */}
+      {/* Tab 3: Workspaces & Limits */}
+      {activeTab === 'workspaces' && (
+        <Card className="p-6 bg-slate-900 border border-slate-800 space-y-5">
+          <h3 className="text-sm font-extrabold uppercase tracking-wider text-white border-b border-slate-800 pb-3 flex items-center gap-2">
+            <Briefcase className="h-4 w-4 text-purple-400" /> Workspace Limits & Policies
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-medium">
+            <div className="space-y-1.5">
+              <label className="text-slate-300 font-bold">Max Workspaces Per User</label>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={settings.workspaces.maxOrgsPerUser ?? 5}
+                onChange={(e) => setSettings({
+                  ...settings,
+                  workspaces: { ...settings.workspaces, maxOrgsPerUser: parseInt(e.target.value) || 1 }
+                })}
+                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500 font-bold"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-slate-300 font-bold">Max Members Per Workspace</label>
+              <input
+                type="number"
+                min={1}
+                max={200}
+                value={settings.workspaces.maxMembersPerOrg ?? 20}
+                onChange={(e) => setSettings({
+                  ...settings,
+                  workspaces: { ...settings.workspaces, maxMembersPerOrg: parseInt(e.target.value) || 1 }
+                })}
+                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500 font-bold"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-slate-300 font-bold">Max Workspace Name Length</label>
+              <input
+                type="number"
+                min={10}
+                max={100}
+                value={settings.workspaces.maxOrgNameLength ?? 50}
+                onChange={(e) => setSettings({
+                  ...settings,
+                  workspaces: { ...settings.workspaces, maxOrgNameLength: parseInt(e.target.value) || 50 }
+                })}
+                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500 font-bold"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2 text-xs">
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+              <div>
+                <p className="font-bold text-white">Allow Workspace Creation</p>
+                <p className="text-[11px] text-slate-400">Controls whether users can create new hackathon workspaces.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.workspaces.allowWorkspaceCreation ?? true}
+                onChange={(e) => setSettings({
+                  ...settings,
+                  workspaces: { ...settings.workspaces, allowWorkspaceCreation: e.target.checked }
+                })}
+                className="h-4 w-4 rounded bg-slate-900 border-slate-700 text-purple-600 focus:ring-0 cursor-pointer"
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+              <div>
+                <p className="font-bold text-white">Allow Workspace Joining</p>
+                <p className="text-[11px] text-slate-400">Controls whether members can join workspaces via invite codes.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.workspaces.allowWorkspaceJoining ?? true}
+                onChange={(e) => setSettings({
+                  ...settings,
+                  workspaces: { ...settings.workspaces, allowWorkspaceJoining: e.target.checked }
+                })}
+                className="h-4 w-4 rounded bg-slate-900 border-slate-700 text-purple-600 focus:ring-0 cursor-pointer"
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+              <div>
+                <p className="font-bold text-white">Allow Workspace Deletion</p>
+                <p className="text-[11px] text-slate-400">Controls whether workspace owners can purge their workspaces.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.workspaces.allowWorkspaceDeletion ?? true}
+                onChange={(e) => setSettings({
+                  ...settings,
+                  workspaces: { ...settings.workspaces, allowWorkspaceDeletion: e.target.checked }
+                })}
+                className="h-4 w-4 rounded bg-slate-900 border-slate-700 text-purple-600 focus:ring-0 cursor-pointer"
+              />
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Tab 4: Ideas & MVPs */}
+      {activeTab === 'ideas' && (
+        <Card className="p-6 bg-slate-900 border border-slate-800 space-y-5">
+          <h3 className="text-sm font-extrabold uppercase tracking-wider text-white border-b border-slate-800 pb-3 flex items-center gap-2">
+            <Lightbulb className="h-4 w-4 text-amber-400" /> Ideas, Voting & MVP Controls
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-medium">
+            <div className="space-y-1.5">
+              <label className="text-slate-300 font-bold">Max Ideas Per User</label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={settings.ideas.maxIdeasPerUser ?? 10}
+                onChange={(e) => setSettings({
+                  ...settings,
+                  ideas: { ...settings.ideas, maxIdeasPerUser: parseInt(e.target.value) || 10 }
+                })}
+                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500 font-bold"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-2">
+            {[
+              { key: 'enableIdeaCreation', label: 'Proposal Creation', desc: 'Allow members to post new proposal ideas' },
+              { key: 'enableIdeaImport', label: 'Idea Import', desc: 'Allow importing public ideas into workspaces' },
+              { key: 'enableIdeaExport', label: 'Idea Export', desc: 'Allow exporting workspace proposals' },
+              { key: 'enableVoting', label: 'Voting Module', desc: 'Allow members to cast votes on proposals' },
+              { key: 'enableSuggestions', label: 'Community Suggestions', desc: 'Allow posting refinement suggestions' },
+              { key: 'enableComments', label: 'Discussion Comments', desc: 'Allow discussion comments on proposals' },
+              { key: 'enableBlueprint', label: 'AI Blueprint Generator', desc: 'Allow generating technical architecture blueprints' },
+              { key: 'enableMvpSelection', label: 'MVP Selection', desc: 'Allow workspace leaders to select MVP' },
+              { key: 'allowIdeaDeletion', label: 'Proposal Deletion', desc: 'Allow authors/owners to delete proposals' },
+            ].map((item) => (
+              <div key={item.key} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-white">{item.label}</p>
+                  <p className="text-[10px] text-slate-400">{item.desc}</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings.ideas[item.key] ?? true}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    ideas: { ...settings.ideas, [item.key]: e.target.checked }
+                  })}
+                  className="h-4 w-4 rounded bg-slate-900 border-slate-700 text-purple-600 focus:ring-0 cursor-pointer"
+                />
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Tab 5: Maintenance Mode */}
       {activeTab === 'maintenance' && (
         <Card className="p-6 bg-slate-900 border border-slate-800 space-y-4">
           <h3 className="text-sm font-extrabold uppercase tracking-wider text-white border-b border-slate-800 pb-3 flex items-center gap-2">
@@ -283,7 +444,7 @@ export default function AdminSettingsPage() {
         </Card>
       )}
 
-      {/* Tab 4: Feature Flags */}
+      {/* Tab 6: Feature Flags */}
       {activeTab === 'features' && (
         <Card className="p-6 bg-slate-900 border border-slate-800 space-y-4">
           <h3 className="text-sm font-extrabold uppercase tracking-wider text-white border-b border-slate-800 pb-3">
@@ -309,7 +470,7 @@ export default function AdminSettingsPage() {
         </Card>
       )}
 
-      {/* Tab 5: System Diagnostics */}
+      {/* Tab 7: System Diagnostics */}
       {activeTab === 'diagnostics' && (
         <Card className="p-6 bg-slate-900 border border-slate-800 space-y-4">
           <h3 className="text-sm font-extrabold uppercase tracking-wider text-white border-b border-slate-800 pb-3 flex items-center gap-2">

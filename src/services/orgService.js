@@ -12,6 +12,24 @@ export const orgService = {
   createOrganization: async (ownerUid, orgData) => {
     if (!ownerUid) throw new Error('Owner UID is required.');
 
+    // Enforce Platform Settings Validation
+    const platformSettings = await rtdbService.getData('platform_settings');
+    const wSettings = platformSettings?.workspaces || {};
+
+    if (wSettings.allowWorkspaceCreation === false) {
+      throw new Error('Workspace creation has been disabled by the platform administrator.');
+    }
+
+    const maxOrgs = wSettings.maxOrgsPerUser ?? 5;
+    const allOrgsObj = (await rtdbService.getData('organizations')) || {};
+    const userOwnedCount = Object.values(allOrgsObj).filter(
+      (o) => o && !o.isDeleted && o.ownerId === ownerUid
+    ).length;
+
+    if (userOwnedCount >= maxOrgs) {
+      throw new Error(`Workspace limit reached. Maximum allowed workspaces per user is ${maxOrgs}.`);
+    }
+
     const orgId = `org_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const inviteCode = generateInviteCode();
     const timestamp = Date.now();
@@ -63,6 +81,14 @@ export const orgService = {
     if (!uid || !inviteCode) throw new Error('User ID and Invite Code are required.');
     const cleanCode = inviteCode.trim().toUpperCase();
 
+    // Enforce Platform Settings Validation
+    const platformSettings = await rtdbService.getData('platform_settings');
+    const wSettings = platformSettings?.workspaces || {};
+
+    if (wSettings.allowWorkspaceJoining === false) {
+      throw new Error('Workspace joining has been disabled by the platform administrator.');
+    }
+
     try {
       const codeRecord = await rtdbService.getData(`invite_codes/${cleanCode}`);
       if (!codeRecord || !codeRecord.orgId) {
@@ -83,9 +109,10 @@ export const orgService = {
 
       const memberCount = org.memberCount || 0;
       const teamSizeLimit = org.teamSizeLimit || 5;
+      const maxAllowedMembers = Math.min(teamSizeLimit, wSettings.maxMembersPerOrg ?? 20);
 
-      if (memberCount >= teamSizeLimit) {
-        throw new Error(`Team is full! Maximum team size limit reached (${teamSizeLimit} members).`);
+      if (memberCount >= maxAllowedMembers) {
+        throw new Error(`Team is full! Maximum team size limit reached (${maxAllowedMembers} members).`);
       }
 
       const timestamp = Date.now();

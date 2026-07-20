@@ -14,6 +14,32 @@ export const ideaService = {
       throw new Error('Organization ID and Author details are required.');
     }
 
+    // Enforce Platform Settings Validation
+    const platformSettings = await rtdbService.getData('platform_settings');
+    const iSettings = platformSettings?.ideas || {};
+
+    if (iSettings.enableIdeaCreation === false) {
+      throw new Error('Idea proposal creation has been disabled by the platform administrator.');
+    }
+
+    const maxIdeas = iSettings.maxIdeasPerUser ?? 10;
+    const allIdeasObj = (await rtdbService.getData('ideas')) || {};
+    let userIdeasCount = 0;
+
+    Object.values(allIdeasObj).forEach((orgIdeas) => {
+      if (orgIdeas && typeof orgIdeas === 'object') {
+        Object.values(orgIdeas).forEach((idea) => {
+          if (idea && !idea.isDeleted && (idea.authorId === author.uid || idea.createdBy === author.uid)) {
+            userIdeasCount++;
+          }
+        });
+      }
+    });
+
+    if (userIdeasCount >= maxIdeas) {
+      throw new Error(`You have reached the maximum number of ideas allowed by the platform (${maxIdeas} ideas).`);
+    }
+
     const ideaId = `idea_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const timestamp = Date.now();
 
@@ -87,6 +113,12 @@ export const ideaService = {
    * Delete an idea with optional MVP cascade cleanup.
    */
   deleteIdea: async (orgId, ideaId, isMvp = false) => {
+    // Enforce Platform Settings Validation
+    const platformSettings = await rtdbService.getData('platform_settings');
+    if (platformSettings?.ideas?.allowIdeaDeletion === false) {
+      throw new Error('Idea proposal deletion has been disabled by the platform administrator.');
+    }
+
     try {
       // 1. Soft-delete idea node
       await rtdbService.updateData(`ideas/${orgId}/${ideaId}`, {
@@ -283,6 +315,15 @@ export const ideaService = {
   importPublicIdeaToWorkspace: async (workspaceId, memberUser, publicIdeaId) => {
     if (!workspaceId || !memberUser || !publicIdeaId) {
       throw new Error('Workspace ID, User context, and Public Idea ID are required.');
+    }
+
+    // Enforce Platform Settings Validation
+    const platformSettings = await rtdbService.getData('platform_settings');
+    const iSettings = platformSettings?.ideas || {};
+    const fFlags = platformSettings?.featureFlags || {};
+
+    if (iSettings.enableIdeaImport === false || fFlags.ideaImport === false) {
+      throw new Error('Idea Import has been disabled by the platform administrator.');
     }
 
     // 1. Fetch public idea node

@@ -76,6 +76,12 @@ export const voteService = {
   toggleVote: async (ideaId, uid, isPublic = false, orgId = null, voteValue = 1) => {
     if (!ideaId || !uid) throw new Error('Idea ID and User ID are required to vote.');
 
+    // Enforce Platform Settings Validation
+    const platformSettings = await rtdbService.getData('platform_settings');
+    if (platformSettings?.ideas?.enableVoting === false) {
+      throw new Error('Voting has been disabled by the platform administrator.');
+    }
+
     const voteKey = `${ideaId}_${uid}`;
     const votePath = `votes/${voteKey}`;
     const ideaPath = isPublic

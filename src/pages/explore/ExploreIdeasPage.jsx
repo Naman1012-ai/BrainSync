@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { usePlatformSettings } from '../../hooks/usePlatformSettings';
 import { publicIdeaService } from '../../services/publicIdeaService';
 import { orgService } from '../../services/orgService';
 import { PageHeader } from '../../components/layout/PageHeader';
@@ -31,6 +32,7 @@ import { ConfirmDialog } from '../../components/feedback/ConfirmDialog';
 
 export default function ExploreIdeasPage() {
   const { user } = useAuth();
+  const { canImportIdea, canCreateIdea } = usePlatformSettings();
 
   // Data States
   const [publicIdeas, setPublicIdeas] = useState([]);
@@ -54,6 +56,25 @@ export default function ExploreIdeasPage() {
   // Modals & Feedback
   const [isCreatePublicIdeaOpen, setIsCreatePublicIdeaOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  const handleOpenCreateModal = () => {
+    const check = canCreateIdea();
+    if (!check.allowed) {
+      setToastMessage(`⚠️ ${check.reason}`);
+      return;
+    }
+    setIsCreatePublicIdeaOpen(true);
+  };
+
+  const handleOpenImportModal = (idea) => {
+    const check = canImportIdea();
+    if (!check.allowed) {
+      setToastMessage(`⚠️ ${check.reason}`);
+      return;
+    }
+    setImportingIdea(idea);
+    setIsImportModalOpen(true);
+  };
 
   // Subscribe to Public Ideas Feed
   useEffect(() => {
@@ -98,34 +119,30 @@ export default function ExploreIdeasPage() {
     };
   }, [user]);
 
-  // Auto Scroll & Highlight newly created public idea card
-  useEffect(() => {
-    if (newlyCreatedIdeaId && newIdeaCardRef.current) {
-      newIdeaCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      const timer = setTimeout(() => {
-        setNewlyCreatedIdeaId(null);
-      }, 3500);
-      return () => clearTimeout(timer);
-    }
-  }, [newlyCreatedIdeaId, publicIdeas]);
+  const handlePublicIdeaPublished = (newIdea) => {
+    if (!newIdea) return;
+    setNewlyCreatedIdeaId(newIdea.ideaId);
+    setToastMessage('✓ Public Proposal published successfully!');
 
-  const handlePublicIdeaPublished = (createdIdea) => {
-    if (createdIdea && createdIdea.ideaId) {
-      setNewlyCreatedIdeaId(createdIdea.ideaId);
-      setToastMessage('Proposal published live on the public feed!');
-    }
+    setTimeout(() => {
+      if (newIdeaCardRef.current) {
+        newIdeaCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
+
+    setTimeout(() => {
+      setNewlyCreatedIdeaId(null);
+    }, 4000);
   };
 
-  // Filter Public Ideas
   const filteredPublicIdeas = useMemo(() => {
     if (!searchQuery.trim()) return publicIdeas;
     const q = searchQuery.toLowerCase();
     return publicIdeas.filter(
       (idea) =>
-        idea.title.toLowerCase().includes(q) ||
-        idea.problemStatement.toLowerCase().includes(q) ||
-        (idea.techStack && idea.techStack.toLowerCase().includes(q)) ||
-        (idea.category && idea.category.toLowerCase().includes(q))
+        idea.title?.toLowerCase().includes(q) ||
+        idea.problemStatement?.toLowerCase().includes(q) ||
+        idea.techStack?.toLowerCase().includes(q)
     );
   }, [publicIdeas, searchQuery]);
 
@@ -141,7 +158,7 @@ export default function ExploreIdeasPage() {
             size="sm"
             icon={<Plus className="h-4 w-4" />}
             className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
-            onClick={() => setIsCreatePublicIdeaOpen(true)}
+            onClick={handleOpenCreateModal}
           >
             + Post Public Proposal
           </Button>
@@ -175,7 +192,7 @@ export default function ExploreIdeasPage() {
           title="No Public Proposals Found"
           description="Be the first innovator to share an open proposal with the global community!"
           action={
-            <Button variant="primary" onClick={() => setIsCreatePublicIdeaOpen(true)}>
+            <Button variant="primary" onClick={handleOpenCreateModal}>
               Post Public Idea
             </Button>
           }
@@ -218,8 +235,7 @@ export default function ExploreIdeasPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setImportingIdea(idea);
-                              setIsImportModalOpen(true);
+                              handleOpenImportModal(idea);
                             }}
                             className="flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-colors border border-indigo-100"
                             title="Import this idea into a workspace"
@@ -272,7 +288,7 @@ export default function ExploreIdeasPage() {
 
                   <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Avatar name={isAuthor ? user.displayName || user.email : idea.authorName} size="sm" />
+                      <Avatar name={isAuthor ? user?.displayName || user?.email : idea.authorName} size="sm" />
                       {isAuthor ? (
                         <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md flex items-center gap-1">
                           <UserCheck className="h-3 w-3 text-indigo-600" /> Created by You

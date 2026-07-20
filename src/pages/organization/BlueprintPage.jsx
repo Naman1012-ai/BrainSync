@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { usePlatformSettings } from '../../hooks/usePlatformSettings';
 import { orgService } from '../../services/orgService';
 import { ideaService } from '../../services/ideaService';
 import { blueprintService } from '../../services/blueprintService';
@@ -29,6 +31,8 @@ import {
 
 export default function BlueprintPage() {
   const { orgId } = useParams();
+  const { canUseBlueprint } = usePlatformSettings();
+  const blueprintCheck = canUseBlueprint();
 
   const [org, setOrg] = useState(null);
   const [selectedIdeaId, setSelectedIdeaId] = useState(null);
@@ -38,6 +42,18 @@ export default function BlueprintPage() {
   const [loadingOrg, setLoadingOrg] = useState(true);
   const [loadingIdea, setLoadingIdea] = useState(true);
   const [loadingBlueprint, setLoadingBlueprint] = useState(true);
+
+  if (!blueprintCheck.allowed) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto text-center space-y-4">
+        <Card className="p-8 border border-amber-200 bg-amber-50 rounded-2xl text-amber-900 space-y-3 shadow-md">
+          <AlertTriangle className="h-10 w-10 text-amber-600 mx-auto" />
+          <h3 className="text-lg font-extrabold">Feature Disabled</h3>
+          <p className="text-sm font-medium">{blueprintCheck.reason}</p>
+        </Card>
+      </div>
+    );
+  }
 
   // 1. Subscribe to Organization & Metadata
   useEffect(() => {

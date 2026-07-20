@@ -14,6 +14,15 @@ export const blueprintService = {
       throw new Error('Leader UID, Organization ID, and Winning Idea ID are required.');
     }
 
+    // Enforce Platform Settings Validation
+    const platformSettings = await rtdbService.getData('platform_settings');
+    if (platformSettings?.ideas?.enableMvpSelection === false) {
+      throw new Error('MVP Selection workflow has been disabled by the platform administrator.');
+    }
+    if (platformSettings?.ideas?.enableBlueprint === false || platformSettings?.featureFlags?.blueprint === false) {
+      throw new Error('AI Blueprint generation has been disabled by the platform administrator.');
+    }
+
     try {
       // 1. Verify Leader permission & current Org status
       const org = await rtdbService.getData(`organizations/${orgId}`);

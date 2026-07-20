@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useOrg } from '../../hooks/useOrg';
+import { usePlatformSettings } from '../../hooks/usePlatformSettings';
 import { IdeaProvider, IdeaContext } from '../../contexts/IdeaContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -12,11 +13,21 @@ import { ErrorBoundary } from '../../components/feedback/ErrorBoundary';
 
 function IdeaBoardContent() {
   const { isFrozen } = useOrg();
+  const { canCreateIdea } = usePlatformSettings();
   const ideaContext = React.useContext(IdeaContext);
   const { searchQuery, setSearchQuery, sortBy, setSortBy } = ideaContext;
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  const handleOpenCreateModal = () => {
+    const check = canCreateIdea();
+    if (!check.allowed) {
+      setToastMessage(`⚠️ ${check.reason}`);
+      return;
+    }
+    setIsCreateModalOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -51,7 +62,7 @@ function IdeaBoardContent() {
               variant="primary"
               size="sm"
               icon={<Plus className="h-4 w-4" />}
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={handleOpenCreateModal}
               className="shrink-0"
             >
               Propose Idea

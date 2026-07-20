@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { UserProvider } from './contexts/UserContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { PlatformSettingsProvider } from './contexts/PlatformSettingsContext';
 import { AuthLayout } from './layouts/AuthLayout';
 import { AppLayout } from './layouts/AppLayout';
 import { OrgLayout } from './layouts/OrgLayout';
@@ -56,7 +57,8 @@ export function App() {
     <ToastProvider>
       <AuthProvider>
         <UserProvider>
-          <BrowserRouter>
+          <PlatformSettingsProvider>
+            <BrowserRouter>
           <Suspense
             fallback={
               <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
@@ -158,9 +160,10 @@ export function App() {
             </Routes>
           </Suspense>
         </BrowserRouter>
-      </UserProvider>
-    </AuthProvider>
-  </ToastProvider>
+      </PlatformSettingsProvider>
+    </UserProvider>
+  </AuthProvider>
+</ToastProvider>
   );
 }
 

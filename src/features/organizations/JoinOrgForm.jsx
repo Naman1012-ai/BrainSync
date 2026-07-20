@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { usePlatformSettings } from '../../hooks/usePlatformSettings';
 import { orgService } from '../../services/orgService';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -11,6 +12,7 @@ import { LogIn } from 'lucide-react';
 export function JoinOrgForm({ initialCode = '', onSuccess = null }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { canJoinWorkspace } = usePlatformSettings();
   const navigate = useNavigate();
 
   const [inviteCode, setInviteCode] = useState(initialCode);
@@ -20,6 +22,13 @@ export function JoinOrgForm({ initialCode = '', onSuccess = null }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const check = canJoinWorkspace();
+    if (!check.allowed) {
+      setError(check.reason);
+      toast.error(check.reason);
+      return;
+    }
 
     const cleanCode = inviteCode.trim().toUpperCase();
     if (!cleanCode || cleanCode.length !== 8) {

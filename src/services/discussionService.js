@@ -15,6 +15,17 @@ export const discussionService = {
     if (!author || !author.uid) throw new Error('User authentication required.');
     if (!ideaId || !message.trim()) throw new Error('Idea ID and message content are required.');
 
+    // Enforce Platform Settings Validation
+    const platformSettings = await rtdbService.getData('platform_settings');
+    const iSettings = platformSettings?.ideas || {};
+
+    if (type === 'suggestion' && iSettings.enableSuggestions === false) {
+      throw new Error('Community suggestions have been disabled by the platform administrator.');
+    }
+    if ((type === 'comment' || !type) && iSettings.enableComments === false) {
+      throw new Error('Discussion comments have been disabled by the platform administrator.');
+    }
+
     const discussionId = `disc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const timestamp = Date.now();
 

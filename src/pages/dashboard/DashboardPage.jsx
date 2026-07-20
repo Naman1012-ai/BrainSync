@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 
 import { EmailVerificationBanner } from '../../components/auth/EmailVerificationBanner';
+import { AnnouncementBanner } from '../../components/announcements/AnnouncementBanner';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -127,6 +128,9 @@ export default function DashboardPage() {
     <div className="space-y-8 max-w-7xl mx-auto px-4 py-8">
       {/* Email Verification Warning Banner */}
       <EmailVerificationBanner />
+
+      {/* Global Real-time Announcement Banner */}
+      <AnnouncementBanner />
 
       {/* 1. Welcome Command Center Header (Frame 1 Instant Mount) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-8 rounded-3xl border border-slate-700/80 shadow-2xl text-white relative overflow-hidden backdrop-blur-md">

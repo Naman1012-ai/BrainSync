@@ -31,6 +31,8 @@ export default function AdminAnnouncementsPage() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Platform Update');
   const [priority, setPriority] = useState('Normal');
+  const [targetAudience, setTargetAudience] = useState('Entire Platform');
+  const [expireHours, setExpireHours] = useState('0');
   const [isPinned, setIsPinned] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -53,7 +55,7 @@ export default function AdminAnnouncementsPage() {
       await adminService.createAnnouncement(
         currentUser.uid,
         currentUser.displayName || currentUser.email,
-        { title, description, category, priority, isPinned }
+        { title, description, category, priority, targetAudience, expireHours, isPinned }
       );
       setToastMsg(`Published announcement "${title.trim()}".`);
       setShowCreateModal(false);
@@ -231,6 +233,35 @@ export default function AdminAnnouncementsPage() {
                     <option value="Normal">Normal Priority</option>
                     <option value="High">High Priority</option>
                     <option value="Critical">Critical Emergency</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-300 font-bold">Target Audience & Expiration</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <select
+                    value={targetAudience}
+                    onChange={(e) => setTargetAudience(e.target.value)}
+                    className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500 font-bold"
+                  >
+                    <option value="Entire Platform">Entire Platform</option>
+                    <option value="Workspace Owners">Workspace Owners</option>
+                    <option value="Workspace Members">Workspace Members</option>
+                    <option value="Verified Users">Verified Users</option>
+                    <option value="Administrators">Administrators</option>
+                  </select>
+
+                  <select
+                    value={expireHours}
+                    onChange={(e) => setExpireHours(e.target.value)}
+                    className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500 font-bold"
+                  >
+                    <option value="0">Never Expire</option>
+                    <option value="1">Expire in 1 Hour</option>
+                    <option value="24">Expire in 24 Hours</option>
+                    <option value="72">Expire in 3 Days</option>
+                    <option value="168">Expire in 7 Days</option>
                   </select>
                 </div>
               </div>
