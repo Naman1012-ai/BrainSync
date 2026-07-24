@@ -14,6 +14,7 @@ import { Spinner } from '../../components/feedback/Spinner';
 import { Toast } from '../../components/feedback/Toast';
 import { ConfirmDialog } from '../../components/feedback/ConfirmDialog';
 import { EditProfileModal } from '../../features/profile/EditProfileModal';
+import { DeleteAccountModal } from '../../features/profile/DeleteAccountModal';
 import { UserReportsList } from '../../features/reports/UserReportsList';
 import { formatTimestamp } from '../../utils/formatting';
 import {
@@ -64,7 +65,6 @@ export default function ProfilePage() {
   // Modals & Feedback
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [copiedUid, setCopiedUid] = useState(false);
 
   // Security Center State
@@ -208,22 +208,6 @@ export default function ProfilePage() {
       toast.success(`Password reset link sent to ${user.email}`);
     } catch (err) {
       toast.error(err.message || 'Failed to send reset email.');
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    setIsDeletingAccount(true);
-    try {
-      await authService.deleteUserAccount(confirmPassword);
-      toast.success('Your account has been permanently deleted.');
-      await signOut();
-      navigate('/signin');
-    } catch (err) {
-      console.error('[ProfilePage] Account deletion failed:', err);
-      toast.error(err.message || 'Failed to delete account. Re-authentication may be required.');
-    } finally {
-      setIsDeletingAccount(false);
-      setIsDeleteAccountOpen(false);
     }
   };
 
@@ -876,16 +860,10 @@ export default function ProfilePage() {
         onSuccess={handleReauthSuccess}
       />
 
-      {/* Account Deletion Confirmation Dialog */}
-      <ConfirmDialog
+      {/* Account Deletion Confirmation Modal */}
+      <DeleteAccountModal
         isOpen={isDeleteAccountOpen}
-        title="Delete Account?"
-        description="Deleting your account permanently removes your profile and workspace memberships. This action cannot be undone."
-        confirmLabel="Delete Account"
-        variant="danger"
-        isLoading={isDeletingAccount}
-        onConfirm={handleDeleteAccount}
-        onCancel={() => setIsDeleteAccountOpen(false)}
+        onClose={() => setIsDeleteAccountOpen(false)}
       />
     </div>
   );

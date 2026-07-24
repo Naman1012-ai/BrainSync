@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 export function Input({
@@ -13,9 +14,19 @@ export function Input({
   value,
   onChange,
   className = '',
+  allowPasswordToggle = true,
   ...props
 }) {
+  const [showPassword, setShowPassword] = useState(false);
   const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+
+  const isPasswordField = type === 'password';
+  const shouldShowToggle = isPasswordField && allowPasswordToggle;
+  const currentInputType = isPasswordField && showPassword ? 'text' : type;
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
 
   return (
     <div className="w-full">
@@ -24,23 +35,41 @@ export function Input({
           {label} {required && <span className="text-rose-500">*</span>}
         </label>
       )}
-      <input
-        id={inputId}
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        maxLength={maxLength}
-        required={required}
-        className={cn(
-          'w-full rounded-lg border bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-0',
-          error
-            ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20'
-            : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20',
-          className
+      <div className="relative w-full">
+        <input
+          id={inputId}
+          type={currentInputType}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          required={required}
+          className={cn(
+            'w-full rounded-lg border bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-0',
+            shouldShowToggle && 'pr-10',
+            error
+              ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20'
+              : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20',
+            className
+          )}
+          {...props}
+        />
+        {shouldShowToggle && (
+          <button
+            type="button"
+            onClick={togglePasswordVisibility}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 focus:text-indigo-600 focus:outline-none rounded transition-colors duration-150"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            title={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <Eye className="h-4 w-4 shrink-0" aria-hidden="true" />
+            )}
+          </button>
         )}
-        {...props}
-      />
+      </div>
       {error && <p className="mt-1 text-xs text-rose-600">{error}</p>}
     </div>
   );
@@ -57,4 +86,6 @@ Input.propTypes = {
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onChange: PropTypes.func,
   className: PropTypes.string,
+  allowPasswordToggle: PropTypes.bool,
 };
+

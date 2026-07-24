@@ -14,6 +14,8 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
 import { getErrorMessage } from '../utils/errorMessages';
+import { rtdbService } from './rtdbService';
+import { orgService } from './orgService';
 
 /**
  * Service Layer abstraction for Firebase Authentication.
@@ -163,41 +165,129 @@ export const authService = {
     const user = auth.currentUser;
     if (!user) throw new Error('No authenticated user found.');
 
-    try {
-      const uid = user.uid;
+    const uid = user.uid;
+    const isPasswordUser = user.providerData?.some((p) => p.providerId === 'password');
 
-      // 1. Re-authenticate if password provided
-      if (password) {
-        await authService.reauthenticateUser(password);
+    // 1. Re-authenticate user if password user
+    if (isPasswordUser) {
+      if (!password || !password.trim()) {
+        throw new Error('Current password is required to delete your account.');
+      }
+      await authService.reauthenticateUser(password.trim());
+    }
+
+    try {
+      // 2. Cascade Cleanup: Workspaces & Memberships
+      try {
+        const allOrgs = (await rtdbService.getData('organizations')) || {};
+        const ownedOrgIds = [];
+        const memberOrgIds = [];
+
+        for (const [orgId, org] of Object.entries(allOrgs)) {
+          if (!org) continue;
+          if (org.ownerId === uid) {
+            ownedOrgIds.push(orgId);
+          } else {
+            memberOrgIds.push(orgId);
+          }
+        }
+
+        // Delete all owned workspaces (and their associated tasks, blueprints, ideas, discussions, members)
+        for (const orgId of ownedOrgIds) {
+          await orgService.deleteWorkspace(orgId).catch((err) => {
+            console.warn(`[authService] Error purging owned workspace ${orgId}:`, err);
+          });
+        }
+
+        // Remove user from all joined workspace rosters and update memberCount
+        for (const orgId of memberOrgIds) {
+          await rtdbService.removeData(`organization_members/${orgId}/${uid}`).catch(() => {});
+          const org = allOrgs[orgId];
+          if (org && typeof org.memberCount === 'number') {
+            const updatedCount = Math.max(1, org.memberCount - 1);
+            await rtdbService.updateData(`organizations/${orgId}`, { memberCount: updatedCount }).catch(() => {});
+          }
+        }
+      } catch (err) {
+        console.warn('[authService] Error cleaning up workspaces:', err);
       }
 
-      // 2. Cascade cleanup user data across Realtime Database
+      // 3. Cascade Cleanup: Ideas (Public & Workspace)
+      try {
+        const publicIdeas = (await rtdbService.getData('publicIdeas')) || {};
+        for (const [ideaId, idea] of Object.entries(publicIdeas)) {
+          if (idea && (idea.authorId === uid || idea.createdBy === uid)) {
+            await rtdbService.updateData(`publicIdeas/${ideaId}`, { isDeleted: true, updatedAt: Date.now() }).catch(() => {});
+            await rtdbService.removeData(`votes/${ideaId}`).catch(() => {});
+            await rtdbService.removeData(`discussions/${ideaId}`).catch(() => {});
+          }
+        }
+
+        const workspaceIdeasMap = (await rtdbService.getData('ideas')) || {};
+        for (const [orgId, orgIdeas] of Object.entries(workspaceIdeasMap)) {
+          if (!orgIdeas || typeof orgIdeas !== 'object') continue;
+          for (const [ideaId, idea] of Object.entries(orgIdeas)) {
+            if (idea && (idea.authorId === uid || idea.createdBy === uid)) {
+              await rtdbService.updateData(`ideas/${orgId}/${ideaId}`, { isDeleted: true, updatedAt: Date.now() }).catch(() => {});
+              await rtdbService.removeData(`votes/${ideaId}`).catch(() => {});
+              await rtdbService.removeData(`discussions/${ideaId}`).catch(() => {});
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[authService] Error cleaning up authored ideas:', err);
+      }
+
+      // 4. Cascade Cleanup: Votes
+      try {
+        const votes = (await rtdbService.getData('votes')) || {};
+        for (const [voteKey, vote] of Object.entries(votes)) {
+          if (voteKey.endsWith(`_${uid}`) || (vote && (vote.uid === uid || vote.userId === uid))) {
+            await rtdbService.removeData(`votes/${voteKey}`).catch(() => {});
+          }
+        }
+      } catch (err) {
+        console.warn('[authService] Error cleaning up votes:', err);
+      }
+
+      // 5. Cascade Cleanup: Discussions / Comments / Suggestions
+      try {
+        const discussions = (await rtdbService.getData('discussions')) || {};
+        for (const [ideaId, discMap] of Object.entries(discussions)) {
+          if (!discMap || typeof discMap !== 'object') continue;
+          for (const [discId, disc] of Object.entries(discMap)) {
+            if (disc && (disc.authorId === uid || disc.uid === uid)) {
+              await rtdbService.removeData(`discussions/${ideaId}/${discId}`).catch(() => {});
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[authService] Error cleaning up discussions:', err);
+      }
+
+      // 6. Direct User Profile & Settings Cleanup across RTDB
       await Promise.all([
         rtdbService.removeData(`users/${uid}`).catch(() => {}),
         rtdbService.removeData(`notifications/${uid}`).catch(() => {}),
         rtdbService.removeData(`user_activity/${uid}`).catch(() => {}),
         rtdbService.removeData(`user_preferences/${uid}`).catch(() => {}),
+        rtdbService.removeData(`user_announcements/${uid}`).catch(() => {}),
+        rtdbService.removeData(`user_reports/${uid}`).catch(() => {}),
+        rtdbService.removeData(`user_admin_notes/${uid}`).catch(() => {}),
+        rtdbService.removeData(`user_admin_warnings/${uid}`).catch(() => {}),
+        rtdbService.removeData(`user_settings/${uid}`).catch(() => {}),
       ]);
 
-      // 3. Remove user from all joined workspace member rosters
-      try {
-        const allOrgMembers = (await rtdbService.getData('organization_members')) || {};
-        for (const [orgId, membersMap] of Object.entries(allOrgMembers)) {
-          if (membersMap && membersMap[uid]) {
-            await rtdbService.removeData(`organization_members/${orgId}/${uid}`).catch(() => {});
-          }
-        }
-      } catch (err) {
-        console.warn('[authService] Error cleaning up workspace memberships:', err);
-      }
-
-      // 4. Permanently delete Firebase Auth credential
+      // 7. Delete Firebase Auth User Account
       await user.delete();
 
       return true;
     } catch (error) {
       console.error('[authService] deleteUserAccount error:', error);
-      throw new Error(getErrorMessage(error.code || 'default'));
+      if (error.code === 'auth/requires-recent-login') {
+        throw new Error('For security reasons, please log out and log back in before deleting your account.');
+      }
+      throw new Error(error.message || getErrorMessage(error.code || 'default'));
     }
   },
 
