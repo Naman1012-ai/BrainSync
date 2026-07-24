@@ -1,0 +1,16 @@
+{
+  "name": "BrainSync — Decide What to Build Before Everyone Else",
+  "short_name": "BrainSync",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#9333ea",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

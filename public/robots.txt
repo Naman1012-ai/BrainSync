@@ -1,0 +1,10 @@
+# BrainSync Robots.txt
+User-agent: *
+Allow: /
+Allow: /explore
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /org/
+Disallow: /settings/
+
+Sitemap: https://brainsync.dev/sitemap.xml

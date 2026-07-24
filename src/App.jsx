@@ -15,6 +15,10 @@ import { Spinner } from './components/feedback/Spinner';
 import { ErrorBoundary } from './components/feedback/ErrorBoundary';
 
 // Route Code Splitting (Lazy Loading)
+const LandingPage = lazy(() => import('./landing/pages/LandingPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/legal/PrivacyPolicyPage'));
+const TermsOfServicePage = lazy(() => import('./pages/legal/TermsOfServicePage'));
+const ContactEngineeringPage = lazy(() => import('./pages/legal/ContactEngineeringPage'));
 const SignUpPage = lazy(() => import('./pages/auth/SignUpPage'));
 const SignInPage = lazy(() => import('./pages/auth/SignInPage'));
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
@@ -67,8 +71,13 @@ export function App() {
             }
           >
             <Routes>
-              {/* Redirect root to dashboard */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              {/* Landing Page */}
+              <Route path="/" element={<LandingPage />} />
+
+              {/* Public Legal & Support Routes */}
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms" element={<TermsOfServicePage />} />
+              <Route path="/contact" element={<ContactEngineeringPage />} />
 
               {/* Public-Only Auth Routes */}
               <Route element={<PublicOnlyGuard />}>

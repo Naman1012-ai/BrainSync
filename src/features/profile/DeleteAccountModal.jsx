@@ -67,7 +67,7 @@ export function DeleteAccountModal({ isOpen, onClose }) {
 
       await signOut();
       handleClose();
-      navigate('/signin');
+      navigate('/');
     } catch (err) {
       console.error('[DeleteAccountModal] Deletion error:', err);
       const userMsg = err.message || 'The account could not be deleted. Please try again.';
