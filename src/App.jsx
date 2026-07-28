@@ -33,6 +33,7 @@ const BlueprintPage = lazy(() => import('./pages/organization/BlueprintPage'));
 const TaskBoardPage = lazy(() => import('./pages/organization/TaskBoardPage'));
 const ProgressDashboardPage = lazy(() => import('./pages/organization/ProgressDashboardPage'));
 const MembersPage = lazy(() => import('./pages/organization/MembersPage'));
+const WorkspaceChatPage = lazy(() => import('./pages/organization/WorkspaceChatPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SettingsPage = lazy(() => import('./pages/organization/SettingsPage'));
 
@@ -108,6 +109,7 @@ export function App() {
                     <Route path="dashboard" element={<ProgressDashboardPage />} />
                   </Route>
                   <Route path="members" element={<MembersPage />} />
+                  <Route path="chat" element={<WorkspaceChatPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                 </Route>
 
@@ -121,6 +123,7 @@ export function App() {
                     <Route path="dashboard" element={<ProgressDashboardPage />} />
                   </Route>
                   <Route path="members" element={<MembersPage />} />
+                  <Route path="chat" element={<WorkspaceChatPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                 </Route>
 

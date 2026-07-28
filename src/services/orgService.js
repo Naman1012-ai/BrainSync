@@ -1,4 +1,5 @@
 import { rtdbService } from './rtdbService';
+import { chatService } from './chatService';
 import { generateInviteCode } from '../utils/inviteCode';
 import { getErrorMessage } from '../utils/errorMessages';
 
@@ -128,6 +129,9 @@ export const orgService = {
       await rtdbService.updateData(`users/${uid}`, {
         organizationId: orgId,
       });
+
+      // Send System Chat Event
+      chatService.sendSystemEvent(orgId, 'general', 'A new member joined the workspace team.', 'member_joined').catch(() => {});
 
       return orgId;
     } catch (error) {

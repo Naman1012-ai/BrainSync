@@ -108,6 +108,10 @@ function OrgLayoutContent() {
     segmentLabel = 'Progress Dashboard';
     segmentSubtitle = 'Real-time velocity & sprint metrics analytics';
     isSubpage = true;
+  } else if (currentPath.includes('/chat')) {
+    segmentLabel = 'Workspace Team Chat';
+    segmentSubtitle = `Real-time channel messaging & collaboration for ${org.name}`;
+    isSubpage = true;
   } else if (currentPath.includes('/settings')) {
     segmentLabel = 'Workspace Settings';
     segmentSubtitle = 'Configure workspace parameters, roles, and preferences';

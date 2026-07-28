@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getDatabase } from 'firebase/database';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -18,10 +19,11 @@ const firebaseConfig = {
 // Initialize Firebase App Singleton (Guarantees single instance)
 const app = initializeApp(firebaseConfig);
 
-// Export Auth, Firestore, and Realtime Database Services
+// Export Auth, Firestore, Realtime Database, and Storage Services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const rtdb = getDatabase(app, firebaseConfig.databaseURL);
+export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export default app;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useParams } from 'react-router-dom';
-import { Lightbulb, FileText, CheckSquare, Users, ArrowLeft, Settings, Home, LayoutDashboard } from 'lucide-react';
+import { Lightbulb, FileText, CheckSquare, Users, ArrowLeft, Settings, Home, LayoutDashboard, MessageSquare } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 export function Sidebar({ status = 'ideation', isMobileOpen = false, onCloseMobile = () => {} }) {
@@ -30,12 +30,22 @@ export function Sidebar({ status = 'ideation', isMobileOpen = false, onCloseMobi
           label: 'Dashboard',
           icon: LayoutDashboard,
         },
+        {
+          to: `/workspaces/${orgId}/chat`,
+          label: 'Team Chat',
+          icon: MessageSquare,
+        },
       ]
     : [
         {
           to: `/workspaces/${orgId}/ideas`,
           label: 'Idea Board',
           icon: Lightbulb,
+        },
+        {
+          to: `/workspaces/${orgId}/chat`,
+          label: 'Team Chat',
+          icon: MessageSquare,
         },
         {
           to: `/workspaces/${orgId}/members`,
@@ -107,24 +117,27 @@ export function Sidebar({ status = 'ideation', isMobileOpen = false, onCloseMobi
         </nav>
       </div>
 
-      <div className="text-xs text-slate-500 px-3 py-2">
-        BrainSync v1.0 (MVP)
+      <div className="text-[10px] text-slate-500 text-center font-mono">
+        BrainSync &copy; {new Date().getFullYear()}
       </div>
     </div>
   );
 
   return (
     <>
-      {/* Desktop fixed sidebar */}
-      <aside className="hidden md:block w-64 shrink-0 border-r border-slate-800">
+      {/* Desktop Sidebar */}
+      <aside className="hidden w-64 shrink-0 border-r border-slate-800 sm:block">
         {sidebarContent}
       </aside>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer Sidebar */}
       {isMobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onCloseMobile} />
-          <div className="relative z-10 w-64 max-w-xs flex-1 animate-in slide-in-from-left duration-200">
+        <div className="fixed inset-0 z-50 flex sm:hidden">
+          <div
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
+            onClick={onCloseMobile}
+          />
+          <div className="relative flex w-64 max-w-xs flex-1 flex-col bg-slate-900 pt-5 pb-4 shadow-xl">
             {sidebarContent}
           </div>
         </div>
