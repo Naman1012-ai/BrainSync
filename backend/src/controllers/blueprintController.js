@@ -1,5 +1,5 @@
-import { rtdbService } from '../../../frontend/src/services/rtdbService.js';
-import { aiBlueprintService } from '../../../frontend/src/services/aiBlueprintService.js';
+import { rtdbService } from '../../src/services/rtdbService.js';
+import { aiBlueprintService } from '../../src/services/aiBlueprintService.js';
 import { geminiService } from '../services/ai/geminiService.js';
 import { validateBlueprintOutput } from '../services/ai/blueprintValidator.js';
 

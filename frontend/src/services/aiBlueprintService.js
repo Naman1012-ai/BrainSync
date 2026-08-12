@@ -1,6 +1,6 @@
 import { rtdbService } from './rtdbService';
 import { getErrorMessage } from '../utils/errorMessages';
-import { blueprintController } from '../../../backend/src/controllers/blueprintController.js';
+import { blueprintController } from '../../server/controllers/blueprintController.js';
 import { generateBlueprintPdf, getSafeFilename } from './blueprintPdfGenerator.js';
 
 /**
