@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { adminService } from '../../services/adminService';
+import { NotificationService } from '../../services/notificationService';
+import { NOTIFICATION_MESSAGES } from '../../utils/notificationMessages';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -13,7 +15,6 @@ export default function AdminRolesPage() {
   const [roles, setRoles] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
-  const [toastMsg, setToastMsg] = useState('');
 
   const allPermissions = [
     { id: 'users.view', label: 'View Users Directory' },
@@ -72,9 +73,9 @@ export default function AdminRolesPage() {
         roleId,
         roles[roleId].permissions
       );
-      setToastMsg(`Permissions for role "${roles[roleId].name}" saved successfully.`);
+      NotificationService.success(NOTIFICATION_MESSAGES.ADMIN.ROLE_UPDATED);
     } catch (err) {
-      setToastMsg(err.message || 'Failed to save role permissions.');
+      NotificationService.error(err);
     } finally {
       setSavingId(null);
     }
@@ -107,12 +108,6 @@ export default function AdminRolesPage() {
           {roleList.length} Defined RBAC Roles
         </Badge>
       </div>
-
-      {toastMsg && (
-        <div className="p-3.5 rounded-xl bg-purple-950/80 border border-purple-800 text-xs font-bold text-purple-200 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-purple-400" /> {toastMsg}
-        </div>
-      )}
 
       {/* Permission Matrix Table */}
       <Card className="p-6 bg-slate-900 border border-slate-800 space-y-4">

@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { adminService } from '../../services/adminService';
 import { authService } from '../../services/authService';
+import { NotificationService } from '../../services/notificationService';
+import { NOTIFICATION_MESSAGES } from '../../utils/notificationMessages';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -50,7 +52,6 @@ export default function AdminUserDetailPage() {
   const [suspendReason, setSuspendReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [copiedUid, setCopiedUid] = useState(false);
-  const [toastMsg, setToastMsg] = useState('');
 
   // Dialog Controls
   const [isSuspendDialogOpen, setIsSuspendDialogOpen] = useState(false);
@@ -96,9 +97,9 @@ export default function AdminUserDetailPage() {
         newNote
       );
       setNewNote('');
-      setToastMsg('Internal admin note saved successfully.');
+      NotificationService.success('Internal admin note saved successfully.');
     } catch (err) {
-      setToastMsg(err.message || 'Failed to add note.');
+      NotificationService.error(err);
     } finally {
       setActionLoading(false);
     }
@@ -117,9 +118,9 @@ export default function AdminUserDetailPage() {
         warningSeverity
       );
       setWarningReason('');
-      setToastMsg(`Issued ${warningSeverity} severity warning to user.`);
+      NotificationService.success(`Issued ${warningSeverity} severity warning to user.`);
     } catch (err) {
-      setToastMsg(err.message || 'Failed to issue warning.');
+      NotificationService.error(err);
     } finally {
       setActionLoading(false);
     }
@@ -137,9 +138,9 @@ export default function AdminUserDetailPage() {
       );
       setIsSuspendDialogOpen(false);
       setSuspendReason('');
-      setToastMsg('User account has been suspended.');
+      NotificationService.success('User account has been suspended.');
     } catch (err) {
-      setToastMsg(err.message || 'Failed to suspend user.');
+      NotificationService.error(err);
     } finally {
       setActionLoading(false);
     }
@@ -153,9 +154,9 @@ export default function AdminUserDetailPage() {
         currentUser.displayName || currentUser.email,
         userId
       );
-      setToastMsg('User account access restored.');
+      NotificationService.success('User account access restored.');
     } catch (err) {
-      setToastMsg(err.message || 'Failed to restore user.');
+      NotificationService.error(err);
     } finally {
       setActionLoading(false);
     }
@@ -165,9 +166,9 @@ export default function AdminUserDetailPage() {
     setActionLoading(true);
     try {
       await authService.sendPasswordResetEmail(profileUser.email);
-      setToastMsg(`Password reset email sent to ${profileUser.email}`);
+      NotificationService.success(NOTIFICATION_MESSAGES.AUTH.PASSWORD_RESET);
     } catch (err) {
-      setToastMsg(err.message || 'Failed to send password reset link.');
+      NotificationService.error(err);
     } finally {
       setActionLoading(false);
     }
@@ -191,12 +192,6 @@ export default function AdminUserDetailPage() {
           UID: {profileUser.uid}
         </Badge>
       </div>
-
-      {toastMsg && (
-        <div className="p-3.5 rounded-xl bg-purple-950/80 border border-purple-800 text-xs font-bold text-purple-200 flex items-center gap-2">
-          <Check className="h-4 w-4 text-purple-400" /> {toastMsg}
-        </div>
-      )}
 
       {/* User Header Profile Card */}
       <Card className="p-6 bg-slate-900 border border-slate-800 space-y-6">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { adminService } from '../../services/adminService';
+import { NotificationService } from '../../services/notificationService';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -48,7 +49,6 @@ export default function AdminWorkspaceDetailPage() {
   const [lockReason, setLockReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
-  const [toastMsg, setToastMsg] = useState('');
 
   // Dialog Controls
   const [isLockDialogOpen, setIsLockDialogOpen] = useState(false);
@@ -96,9 +96,9 @@ export default function AdminWorkspaceDetailPage() {
       );
       setIsLockDialogOpen(false);
       setLockReason('');
-      setToastMsg('Workspace has been locked.');
+      NotificationService.success('Workspace has been locked.');
     } catch (err) {
-      setToastMsg(err.message || 'Failed to lock workspace.');
+      NotificationService.error(err);
     } finally {
       setActionLoading(false);
     }
@@ -112,9 +112,9 @@ export default function AdminWorkspaceDetailPage() {
         currentUser.displayName || currentUser.email,
         workspaceId
       );
-      setToastMsg('Workspace unlocked.');
+      NotificationService.success('Workspace unlocked.');
     } catch (err) {
-      setToastMsg(err.message || 'Failed to unlock workspace.');
+      NotificationService.error(err);
     } finally {
       setActionLoading(false);
     }
@@ -129,17 +129,17 @@ export default function AdminWorkspaceDetailPage() {
           currentUser.displayName || currentUser.email,
           workspaceId
         );
-        setToastMsg('Workspace restored from archive.');
+        NotificationService.success('Workspace restored from archive.');
       } else {
         await adminService.archiveWorkspace(
           currentUser.uid,
           currentUser.displayName || currentUser.email,
           workspaceId
         );
-        setToastMsg('Workspace archived.');
+        NotificationService.success('Workspace archived.');
       }
     } catch (err) {
-      setToastMsg(err.message || 'Failed to toggle archive state.');
+      NotificationService.error(err);
     } finally {
       setActionLoading(false);
     }
@@ -161,9 +161,9 @@ export default function AdminWorkspaceDetailPage() {
         targetMember.displayName
       );
       setSelectedNewOwner('');
-      setToastMsg(`Ownership transferred to ${targetMember.displayName}.`);
+      NotificationService.success(`Ownership transferred to ${targetMember.displayName}.`);
     } catch (err) {
-      setToastMsg(err.message || 'Failed to transfer ownership.');
+      NotificationService.error(err);
     } finally {
       setActionLoading(false);
     }
@@ -177,9 +177,10 @@ export default function AdminWorkspaceDetailPage() {
         currentUser.displayName || currentUser.email,
         workspaceId
       );
+      NotificationService.success('Workspace deleted permanently.');
       navigate('/admin/workspaces');
     } catch (err) {
-      setToastMsg(err.message || 'Failed to delete workspace.');
+      NotificationService.error(err);
       setActionLoading(false);
     }
   };
@@ -202,12 +203,6 @@ export default function AdminWorkspaceDetailPage() {
           Workspace ID: {workspace.orgId}
         </Badge>
       </div>
-
-      {toastMsg && (
-        <div className="p-3.5 rounded-xl bg-purple-950/80 border border-purple-800 text-xs font-bold text-purple-200 flex items-center gap-2">
-          <Check className="h-4 w-4 text-purple-400" /> {toastMsg}
-        </div>
-      )}
 
       {/* Header Banner */}
       <Card className="p-6 bg-slate-900 border border-slate-800 space-y-6">

@@ -11,9 +11,12 @@
     "format": "prettier --write \"src/**/*.{js,jsx,css,md}\""
   },
   "dependencies": {
+    "@google/genai": "^2.16.0",
     "@uploadthing/react": "^7.3.3",
     "clsx": "^2.1.1",
     "firebase": "^10.14.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^0.454.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

@@ -11,7 +11,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
-import { Toast } from '../../components/feedback/Toast';
+import { NotificationService } from '../../services/notificationService';
+import { NOTIFICATION_MESSAGES } from '../../utils/notificationMessages';
 import { CreatePublicIdeaModal } from '../../features/ideas/CreatePublicIdeaModal';
 import { PublicIdeaDetailModal } from '../../features/ideas/PublicIdeaDetailModal';
 import { ImportToWorkspaceModal } from '../../features/ideas/ImportToWorkspaceModal';
@@ -55,12 +56,11 @@ export default function ExploreIdeasPage() {
 
   // Modals & Feedback
   const [isCreatePublicIdeaOpen, setIsCreatePublicIdeaOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
 
   const handleOpenCreateModal = () => {
     const check = canCreateIdea();
     if (!check.allowed) {
-      setToastMessage(`⚠️ ${check.reason}`);
+      NotificationService.warning(check.reason);
       return;
     }
     setIsCreatePublicIdeaOpen(true);
@@ -69,7 +69,7 @@ export default function ExploreIdeasPage() {
   const handleOpenImportModal = (idea) => {
     const check = canImportIdea();
     if (!check.allowed) {
-      setToastMessage(`⚠️ ${check.reason}`);
+      NotificationService.warning(check.reason);
       return;
     }
     setImportingIdea(idea);
@@ -91,10 +91,10 @@ export default function ExploreIdeasPage() {
     setIsDeletingPublic(true);
     try {
       await publicIdeaService.deletePublicIdea(deletingPublicIdea.ideaId);
-      setToastMessage('✓ Idea deleted successfully.');
+      NotificationService.success(NOTIFICATION_MESSAGES.IDEA.DELETED);
       setDeletingPublicIdea(null);
     } catch (err) {
-      setToastMessage(err.message || 'Unable to delete idea. Please try again.');
+      NotificationService.error(err);
     } finally {
       setIsDeletingPublic(false);
     }
@@ -122,7 +122,7 @@ export default function ExploreIdeasPage() {
   const handlePublicIdeaPublished = (newIdea) => {
     if (!newIdea) return;
     setNewlyCreatedIdeaId(newIdea.ideaId);
-    setToastMessage('✓ Public Proposal published successfully!');
+    NotificationService.success(NOTIFICATION_MESSAGES.IDEA.CREATED);
 
     setTimeout(() => {
       if (newIdeaCardRef.current) {
@@ -322,7 +322,7 @@ export default function ExploreIdeasPage() {
         isOpen={Boolean(selectedPublicIdea)}
         idea={selectedPublicIdea}
         onClose={() => setSelectedPublicIdea(null)}
-        onToast={(msg) => setToastMessage(msg)}
+        onToast={(msg) => NotificationService.info(msg)}
       />
 
       {/* Direct Card Import Modal */}
@@ -334,7 +334,7 @@ export default function ExploreIdeasPage() {
           setIsImportModalOpen(false);
           setImportingIdea(null);
         }}
-        onToast={(msg) => setToastMessage(msg)}
+        onToast={(msg) => NotificationService.info(msg)}
       />
 
       {/* Public Idea Deletion Confirmation Modal */}
@@ -354,14 +354,6 @@ export default function ExploreIdeasPage() {
         isOpen={isCreatePublicIdeaOpen}
         onClose={() => setIsCreatePublicIdeaOpen(false)}
         onSuccess={handlePublicIdeaPublished}
-      />
-
-      {/* Toast Notification */}
-      <Toast
-        type="success"
-        message={toastMessage}
-        isOpen={Boolean(toastMessage)}
-        onClose={() => setToastMessage('')}
       />
     </div>
   );

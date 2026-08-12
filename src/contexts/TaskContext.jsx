@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useOrg } from '../hooks/useOrg';
 import { useToast } from '../hooks/useToast';
 import { taskService } from '../services/taskService';
+import { NOTIFICATION_MESSAGES } from '../utils/notificationMessages';
 
 export const TaskContext = createContext({
   tasks: [],
@@ -63,10 +64,10 @@ export function TaskProvider({ children }) {
       if (!user || !orgId) return;
       try {
         const res = await taskService.createTask(user, orgId, taskData);
-        toast.success('Task created successfully!');
+        toast.success(NOTIFICATION_MESSAGES.TASK.CREATED);
         return res;
       } catch (err) {
-        toast.error(err.message || 'Failed to create task.');
+        toast.error(err);
       }
     },
     [user, orgId, toast]
@@ -77,9 +78,9 @@ export function TaskProvider({ children }) {
       if (!orgId) return;
       try {
         await taskService.updateTask(orgId, taskId, updates);
-        toast.success('Task updated successfully.');
+        toast.success(NOTIFICATION_MESSAGES.TASK.UPDATED);
       } catch (err) {
-        toast.error(err.message || 'Failed to update task.');
+        toast.error(err);
       }
     },
     [orgId, toast]
@@ -91,12 +92,12 @@ export function TaskProvider({ children }) {
       try {
         await taskService.updateTaskStatus(orgId, taskId, newStatus);
         if (newStatus === 'done' || newStatus === 'completed') {
-          toast.success('Task marked as completed! 🎉');
+          toast.success(NOTIFICATION_MESSAGES.TASK.COMPLETED);
         } else {
           toast.info(`Task status updated to ${newStatus}.`);
         }
       } catch (err) {
-        toast.error(err.message || 'Failed to update task status.');
+        toast.error(err);
       }
     },
     [orgId, toast]
@@ -109,7 +110,7 @@ export function TaskProvider({ children }) {
         await taskService.assignTask(orgId, taskId, assignedToUid, assignedToName);
         toast.success(`Task assigned to ${assignedToName}.`);
       } catch (err) {
-        toast.error(err.message || 'Failed to assign task.');
+        toast.error(err);
       }
     },
     [orgId, toast]
@@ -120,9 +121,9 @@ export function TaskProvider({ children }) {
       if (!orgId) return;
       try {
         await taskService.deleteTask(orgId, taskId);
-        toast.info('Task deleted.');
+        toast.info(NOTIFICATION_MESSAGES.TASK.DELETED);
       } catch (err) {
-        toast.error(err.message || 'Failed to delete task.');
+        toast.error(err);
       }
     },
     [orgId, toast]

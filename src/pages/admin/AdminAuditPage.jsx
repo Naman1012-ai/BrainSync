@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { adminService } from '../../services/adminService';
+import { NotificationService } from '../../services/notificationService';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -27,7 +28,6 @@ export default function AdminAuditPage() {
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('ALL');
   const [selectedLog, setSelectedLog] = useState(null);
-  const [toastMsg, setToastMsg] = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -68,7 +68,7 @@ export default function AdminAuditPage() {
     a.href = url;
     a.download = `brainsync_audit_logs_${Date.now()}.json`;
     a.click();
-    setToastMsg('Audit logs exported as JSON.');
+    NotificationService.success('Audit logs exported as JSON.');
   };
 
   if (loading) {
@@ -108,12 +108,6 @@ export default function AdminAuditPage() {
           </Badge>
         </div>
       </div>
-
-      {toastMsg && (
-        <div className="p-3.5 rounded-xl bg-purple-950/80 border border-purple-800 text-xs font-bold text-purple-200 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-purple-400" /> {toastMsg}
-        </div>
-      )}
 
       {/* Controls Bar */}
       <Card className="p-5 bg-slate-900 border border-slate-800 space-y-4">

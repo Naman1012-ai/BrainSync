@@ -266,6 +266,7 @@ export const ideaService = {
       // Clear active project metadata if demoting the current MVP
       await Promise.all([
         rtdbService.updateData(`organizations/${orgId}`, {
+          activeProjectId: null,
           status: 'ideation',
           updatedAt: timestamp,
         }).catch(() => {}),

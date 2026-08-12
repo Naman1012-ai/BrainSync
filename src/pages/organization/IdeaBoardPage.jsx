@@ -1,95 +1,303 @@
 import React, { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { useOrg } from '../../hooks/useOrg';
 import { usePlatformSettings } from '../../hooks/usePlatformSettings';
 import { IdeaProvider, IdeaContext } from '../../contexts/IdeaContext';
+import { Card } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
-import { Toast } from '../../components/feedback/Toast';
+import { Avatar } from '../../components/ui/Avatar';
+import { NotificationService } from '../../services/notificationService';
 import { IdeaList } from '../../features/ideas/IdeaList';
 import { CreateIdeaModal } from '../../features/ideas/CreateIdeaModal';
-import { Plus, Search } from 'lucide-react';
 import { ErrorBoundary } from '../../components/feedback/ErrorBoundary';
+import { formatTimestamp } from '../../utils/formatting';
+import {
+  Lightbulb,
+  Plus,
+  Search,
+  Trophy,
+  ThumbsUp,
+  Users,
+  FileText,
+  CheckSquare,
+  BarChart2,
+  ArrowRight,
+  Filter,
+  Sparkles,
+  Layers,
+  ChevronRight,
+  Globe,
+  Clock,
+  Flame,
+} from 'lucide-react';
 
 function IdeaBoardContent() {
-  const { isFrozen } = useOrg();
+  const { org, members, isFrozen } = useOrg();
   const { canCreateIdea } = usePlatformSettings();
+  const { orgId } = useParams();
+
   const ideaContext = React.useContext(IdeaContext);
-  const { searchQuery, setSearchQuery, sortBy, setSortBy } = ideaContext;
+  const {
+    ideas,
+    filteredIdeas,
+    loading,
+    searchQuery,
+    setSearchQuery,
+    sortBy,
+    setSortBy,
+    activeFilter,
+    setActiveFilter,
+    stats,
+  } = ideaContext;
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
 
   const handleOpenCreateModal = () => {
     const check = canCreateIdea();
     if (!check.allowed) {
-      setToastMessage(`⚠️ ${check.reason}`);
+      NotificationService.warning(check.reason);
       return;
     }
     setIsCreateModalOpen(true);
   };
 
+  const selectedMvp = stats?.selectedMvp;
+
   return (
     <div className="space-y-6">
-      {/* Search, Filter & Action Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <div className="relative w-full sm:w-80">
-          <Input
-            placeholder="Search ideas or tech stack..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+      {/* 1. WORKSPACE DASHBOARD KPI STATS GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Proposals */}
+        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-mono">
+              Total Proposals
+            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
+              <Lightbulb className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-2xl font-black text-slate-900">{stats?.totalIdeas || 0}</h3>
+            <span className="text-xs font-bold text-slate-500">Submitted</span>
+          </div>
+        </Card>
+
+        {/* Card 2: Community Votes */}
+        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-mono">
+              Community Votes
+            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+              <ThumbsUp className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-2xl font-black text-indigo-600">{stats?.totalVotes || 0}</h3>
+            <span className="text-xs font-bold text-slate-500">Total Cast</span>
+          </div>
+        </Card>
+
+        {/* Card 3: Selected MVP Status */}
+        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-mono">
+              Winning MVP
+            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+              <Trophy className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-sm font-black text-slate-900 truncate max-w-[140px]">
+              {selectedMvp ? selectedMvp.title : 'Pending Selection'}
+            </h3>
+            <Badge variant={selectedMvp ? 'success' : 'default'} className="text-[9px] uppercase font-bold">
+              {selectedMvp ? 'Selected' : 'Voting'}
+            </Badge>
+          </div>
+        </Card>
+
+        {/* Card 4: Team Roster */}
+        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-mono">
+              Team Roster
+            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
+              <Users className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-2xl font-black text-slate-900">{members?.length || 1}</h3>
+            <span className="text-xs font-bold text-slate-500">Members</span>
+          </div>
+        </Card>
+      </div>
+
+      {/* 2. FEATURED SELECTED MVP HERO BANNER */}
+      {selectedMvp && (
+        <Card className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl border border-indigo-800/80 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 h-40 w-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-3 max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="success" className="bg-amber-500 text-white font-bold flex items-center gap-1 shadow-sm">
+                  <Trophy className="h-3.5 w-3.5" /> Workspace Winning MVP
+                </Badge>
+                <Badge variant="info" className="bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
+                  {selectedMvp.difficultyLevel || 'Medium'} Build
+                </Badge>
+                <span className="text-xs font-mono text-indigo-300 font-bold">
+                  👍 {selectedMvp.voteCount || 0} Votes
+                </span>
+              </div>
+
+              <h2 className="text-2xl font-black text-white tracking-tight">{selectedMvp.title}</h2>
+              <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed font-medium">
+                {selectedMvp.problemStatement}
+              </p>
+
+              <div className="flex items-center gap-2 text-xs text-slate-400 pt-1">
+                <Avatar name={selectedMvp.authorName || 'Collaborator'} size="xs" />
+                <span>Proposed by <strong className="text-white">{selectedMvp.authorName || 'Team Member'}</strong></span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap md:flex-col items-start md:items-end gap-2.5 shrink-0">
+              <Link to={`/workspaces/${orgId}/ideas/${selectedMvp.ideaId}/blueprint`}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={<FileText className="h-4 w-4 text-purple-200" />}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md"
+                >
+                  View Blueprint
+                </Button>
+              </Link>
+              <Link to={`/workspaces/${orgId}/ideas/${selectedMvp.ideaId}/tasks`}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<CheckSquare className="h-4 w-4 text-indigo-300" />}
+                  className="bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border-indigo-800 font-bold text-xs"
+                >
+                  Sprint Task Board
+                </Button>
+              </Link>
+              <Link to={`/workspaces/${orgId}/ideas/${selectedMvp.ideaId}/dashboard`}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<BarChart2 className="h-4 w-4 text-slate-300" />}
+                  className="bg-slate-800/80 hover:bg-slate-800 text-slate-200 border-slate-700 font-bold text-xs"
+                >
+                  Progress Metrics
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* 3. FILTER TABS & SEARCH / SORT CONTROLS BAR */}
+      <div className="space-y-4">
+        {/* Filter Category Tabs */}
+        <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-2 overflow-x-auto">
+          <div className="flex items-center gap-2">
+            {[
+              { id: 'all', label: `All Proposals (${ideas.length})`, icon: Lightbulb },
+              { id: 'selected', label: selectedMvp ? '🏆 Winning MVP' : '🏆 Winning MVP (0)', icon: Trophy },
+              { id: 'top', label: '🔥 Top Voted', icon: Flame },
+              { id: 'mine', label: `👤 My Proposals (${stats?.myIdeasCount || 0})`, icon: Users },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const active = activeFilter === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveFilter(tab.id)}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                    active
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" /> {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <Link to="/explore">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Globe className="h-3.5 w-3.5 text-indigo-600" />}
+              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 font-bold text-xs whitespace-nowrap shrink-0"
+            >
+              Explore Public Feed
+            </Button>
+          </Link>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0">
-            Sort By:
-          </span>
-          <Select
-            options={[
-              { value: 'most_voted', label: 'Most Voted' },
-              { value: 'newest', label: 'Newest First' },
-            ]}
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="w-40 py-1 text-xs"
-          />
+        {/* Search, Sort & Create Action Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="relative w-full sm:w-80">
+            <Input
+              placeholder="Search by title, problem, or tech stack..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 text-xs"
+            />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          </div>
 
-          {!isFrozen && (
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Plus className="h-4 w-4" />}
-              onClick={handleOpenCreateModal}
-              className="shrink-0"
-            >
-              Propose Idea
-            </Button>
-          )}
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0 font-mono">
+              Sort By:
+            </span>
+            <Select
+              options={[
+                { value: 'most_voted', label: 'Most Voted' },
+                { value: 'newest', label: 'Newest First' },
+              ]}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-40 py-1 text-xs"
+            />
+
+            {!isFrozen && (
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<Plus className="h-4 w-4" />}
+                onClick={handleOpenCreateModal}
+                className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              >
+                Propose Idea
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Real-time Idea Cards Grid */}
+      {/* 4. REAL-TIME IDEA CARDS GRID */}
       <IdeaList
-        onToast={(msg) => setToastMessage(msg)}
+        onToast={(msg) => NotificationService.info(msg)}
         onCreateClick={!isFrozen ? () => setIsCreateModalOpen(true) : null}
       />
 
-      {/* Create Idea Modal */}
+      {/* CREATE IDEA MODAL */}
       <CreateIdeaModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={(msg) => setToastMessage(msg)}
-      />
-
-      {/* Feedback Toast */}
-      <Toast
-        type="success"
-        message={toastMessage}
-        isOpen={Boolean(toastMessage)}
-        onClose={() => setToastMessage('')}
+        onSuccess={(msg) => NotificationService.success(msg)}
       />
     </div>
   );

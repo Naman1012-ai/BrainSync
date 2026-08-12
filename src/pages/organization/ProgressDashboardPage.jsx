@@ -2,7 +2,6 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDashboard } from '../../hooks/useDashboard';
 import { DashboardProvider } from '../../contexts/DashboardContext';
-import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -13,21 +12,20 @@ import { formatTimestamp } from '../../utils/formatting';
 import {
   TrendingUp,
   Clock,
-  Briefcase,
   CheckCircle2,
   ListTodo,
   PlayCircle,
   AlertOctagon,
   Users,
-  Calendar,
   ChevronRight,
   ClipboardList,
   AlertTriangle,
+  Plus,
 } from 'lucide-react';
 
 function DashboardContent() {
   const { stats, recentActivity, loading } = useDashboard();
-  const { orgId } = useParams();
+  const { orgId, ideaId: routeIdeaId } = useParams();
 
   if (loading) {
     return (
@@ -49,11 +47,15 @@ function DashboardContent() {
     );
   }
 
-  const { org, blueprint, taskSummary, teamSummary } = stats;
+  const { org, idea, blueprint, taskSummary, teamSummary } = stats;
+
+  const currentIdeaId = routeIdeaId || idea?.ideaId || blueprint?.ideaId || blueprint?.mvpIdeaId;
+  const projectTitle = idea?.title || blueprint?.ideaTitle || org?.name || 'Workspace Active Project';
+  const problemStatement = idea?.problemStatement || blueprint?.problemStatement || 'Executing sprint tasks compiled from the selected proposal.';
 
   // Calculate Days Remaining
   let daysRemainingText = 'No Deadline Set';
-  if (org.hackathonDate) {
+  if (org?.hackathonDate) {
     const targetTime = new Date(org.hackathonDate).getTime();
     if (!isNaN(targetTime)) {
       const msDiff = targetTime - Date.now();
@@ -64,7 +66,7 @@ function DashboardContent() {
 
   // Calculate progress percentage safely
   const progressPercentage =
-    taskSummary.total > 0 ? Math.round((taskSummary.completed / taskSummary.total) * 100) : 0;
+    taskSummary?.total > 0 ? Math.round((taskSummary.completed / taskSummary.total) * 100) : 0;
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -80,15 +82,15 @@ function DashboardContent() {
               <Badge variant="info" className="bg-indigo-500/20 text-indigo-200 uppercase tracking-widest font-black text-[9px] border border-indigo-500/30">
                 Active Project
               </Badge>
-              <span className="text-slate-400 font-bold text-xs flex items-center gap-1">
+              <span className="text-slate-400 font-bold text-xs flex items-center gap-1 font-mono">
                 <Clock className="h-3.5 w-3.5" /> {daysRemainingText}
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
-              {blueprint?.ideaTitle || 'Workspace Active Project'}
+              {projectTitle}
             </h2>
             <p className="text-xs text-slate-300 line-clamp-2 max-w-2xl font-medium leading-relaxed">
-              {blueprint?.problemStatement || 'Executing sprint tasks compiled from the selected proposal.'}
+              {problemStatement}
             </p>
           </div>
 
@@ -96,12 +98,12 @@ function DashboardContent() {
           <div className="bg-white/5 border border-white/10 p-5 rounded-2xl space-y-3 w-full shadow-inner">
             <div className="flex items-center justify-between text-xs font-bold">
               <span className="text-slate-300">Milestone Progress</span>
-              <span className="text-indigo-400 text-sm font-black">{progressPercentage}%</span>
+              <span className="text-indigo-400 text-sm font-black font-mono">{progressPercentage}%</span>
             </div>
             <ProgressBar percentage={progressPercentage} size="lg" className="bg-slate-700" />
-            <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold pt-1">
-              <span>{taskSummary.completed} Completed Tasks</span>
-              <span>{taskSummary.total} Total</span>
+            <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono font-semibold pt-1">
+              <span>{taskSummary?.completed || 0} Completed Tasks</span>
+              <span>{taskSummary?.total || 0} Total</span>
             </div>
           </div>
         </div>
@@ -118,14 +120,29 @@ function DashboardContent() {
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <ClipboardList className="h-4 w-4 text-indigo-600" /> Task Status Matrix
               </h3>
-              <Badge variant="default" className="font-extrabold uppercase text-[9px] tracking-widest bg-slate-100 text-slate-600">
-                {taskSummary.total} Tasks Total
+              <Badge variant="default" className="font-extrabold uppercase text-[9px] tracking-widest bg-slate-100 text-slate-600 font-mono">
+                {taskSummary?.total || 0} Tasks Total
               </Badge>
             </div>
 
-            {taskSummary.total === 0 ? (
-              <div className="py-6 text-center text-xs text-slate-400 font-medium">
-                No active tasks found in the current sprint board.
+            {!taskSummary || taskSummary.total === 0 ? (
+              <div className="py-8 text-center space-y-3">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500 border border-indigo-100">
+                  <ListTodo className="h-6 w-6" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-slate-900">No Sprint Tasks Created Yet</h4>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                    Sprint progress metrics will be calculated automatically as tasks are created and completed on the Task Board.
+                  </p>
+                </div>
+                {currentIdeaId && (
+                  <Link to={`/workspaces/${orgId}/ideas/${currentIdeaId}/tasks`}>
+                    <Button variant="primary" size="sm" icon={<Plus className="h-3.5 w-3.5" />} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs mt-2">
+                      Create Tasks on Task Board
+                    </Button>
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -180,16 +197,16 @@ function DashboardContent() {
 
             <div className="grid grid-cols-3 gap-4 text-center py-2">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Roster</span>
-                <p className="text-xl font-black text-slate-900">{teamSummary.totalMembers}</p>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Total Roster</span>
+                <p className="text-xl font-black text-slate-900">{teamSummary?.totalMembers || 1}</p>
               </div>
               <div className="space-y-1 border-x border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Assignees</span>
-                <p className="text-xl font-black text-indigo-600">{teamSummary.withTasks}</p>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Active Assignees</span>
+                <p className="text-xl font-black text-indigo-600">{teamSummary?.withTasks || 0}</p>
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">No Tasks Assigned</span>
-                <p className="text-xl font-black text-slate-500">{teamSummary.withoutTasks}</p>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">No Tasks Assigned</span>
+                <p className="text-xl font-black text-slate-500">{teamSummary?.withoutTasks || 0}</p>
               </div>
             </div>
           </Card>
@@ -201,12 +218,12 @@ function DashboardContent() {
           <Card className="p-6 bg-white border border-slate-200 shadow-sm space-y-4 rounded-2xl h-full flex flex-col justify-between">
             <div>
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
-                <Clock className="h-4 w-4 text-indigo-600 animate-spin" /> Activity Timeline
+                <Clock className="h-4 w-4 text-indigo-600" /> Activity Timeline
               </h3>
 
-              {recentActivity.length === 0 ? (
-                <p className="text-xs text-slate-500 italic py-6 text-center">
-                  No task activities recorded in this sprint yet.
+              {!recentActivity || recentActivity.length === 0 ? (
+                <p className="text-xs text-slate-500 italic py-8 text-center font-medium">
+                  No task activities or sprint progress recorded for this project yet.
                 </p>
               ) : (
                 <div className="space-y-4 mt-4 overflow-y-auto max-h-[320px] pr-1">
@@ -224,7 +241,7 @@ function DashboardContent() {
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide shrink-0 ${typeBadgeColor}`}>
                             {activity.type}
                           </span>
-                          <span className="text-slate-400 font-semibold">{formatTimestamp(activity.timestamp)}</span>
+                          <span className="text-slate-400 font-semibold font-mono">{formatTimestamp(activity.timestamp)}</span>
                         </div>
                         <p className="text-slate-700 font-bold leading-relaxed">{activity.title}</p>
                       </div>
@@ -234,11 +251,13 @@ function DashboardContent() {
               )}
             </div>
 
-            <Link to={`/workspaces/${orgId}/ideas/${blueprint?.ideaId}/tasks`}>
-              <Button variant="ghost" fullWidth size="sm" className="mt-4 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl">
-                Go to Kanban Tasks Board <ChevronRight className="h-3.5 w-3.5 ml-1" />
-              </Button>
-            </Link>
+            {currentIdeaId && (
+              <Link to={`/workspaces/${orgId}/ideas/${currentIdeaId}/tasks`}>
+                <Button variant="ghost" fullWidth size="sm" className="mt-4 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl">
+                  Go to Kanban Tasks Board <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </Link>
+            )}
           </Card>
         </div>
       </div>

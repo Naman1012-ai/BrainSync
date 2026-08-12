@@ -12,7 +12,8 @@ import { Textarea } from '../../components/ui/Textarea';
 import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
 import { PageHeader } from '../../components/layout/PageHeader';
-import { Toast } from '../../components/feedback/Toast';
+import { NotificationService } from '../../services/notificationService';
+import { NOTIFICATION_MESSAGES } from '../../utils/notificationMessages';
 import { ConfirmDialog } from '../../components/feedback/ConfirmDialog';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { formatTimestamp } from '../../utils/formatting';
@@ -77,9 +78,6 @@ export default function SettingsPage() {
   const [primaryReady, setPrimaryReady] = useState(false);
   const [statsLoading, setStatsLoading] = useState(true);
   const [savingGeneral, setSavingGeneral] = useState(false);
-  const [savingPreferences, setSavingPreferences] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-
   // Dialog Confirmations
   const [confirmLeave, setConfirmLeave] = useState(false);
   
@@ -171,9 +169,7 @@ export default function SettingsPage() {
     };
   }, [orgId, org]);
 
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-  };
+
 
   // Validation helper
   const validateGeneralSettings = () => {
@@ -211,16 +207,16 @@ export default function SettingsPage() {
     const errors = validateGeneralSettings();
     setValidationErrors(errors);
     if (Object.keys(errors).length > 0) {
-      showToast('Please fix validation errors before saving.', 'error');
+      NotificationService.error('Please fix validation errors before saving.');
       return;
     }
 
     setSavingGeneral(true);
     try {
       await orgService.updateOrganizationGeneralSettings(orgId, generalSettings);
-      showToast('General settings updated successfully.');
+      NotificationService.success(NOTIFICATION_MESSAGES.WORKSPACE.UPDATED);
     } catch (err) {
-      showToast(err.message || 'Failed to save general settings.', 'error');
+      NotificationService.error(err);
     } finally {
       setSavingGeneral(false);
     }
@@ -233,9 +229,9 @@ export default function SettingsPage() {
     setSavingPreferences(true);
     try {
       await orgService.updateWorkspacePreferences(orgId, preferences);
-      showToast('Preferences updated successfully.');
+      NotificationService.success(NOTIFICATION_MESSAGES.WORKSPACE.PREFERENCES_UPDATED);
     } catch (err) {
-      showToast(err.message || 'Failed to save preferences.', 'error');
+      NotificationService.error(err);
     } finally {
       setSavingPreferences(false);
     }
@@ -244,7 +240,7 @@ export default function SettingsPage() {
   // Member Management Actions
   const handleRoleChange = async (targetUid, currentRole, action) => {
     if (currentUserRole !== 'owner') {
-      showToast('Only the Owner can promote or demote members.', 'error');
+      NotificationService.warning('Only the Owner can promote or demote members.');
       return;
     }
 
@@ -258,9 +254,9 @@ export default function SettingsPage() {
       setMembers((prev) =>
         prev.map((m) => (m.uid === targetUid ? { ...m, role: nextRole } : m))
       );
-      showToast(`Member role updated successfully.`);
+      NotificationService.success(NOTIFICATION_MESSAGES.MEMBER.ROLE_UPDATED);
     } catch (err) {
-      showToast(err.message || 'Failed to modify role.', 'error');
+      NotificationService.error(err);
     }
   };
 
@@ -269,16 +265,16 @@ export default function SettingsPage() {
     const isAdmin = currentUserRole === 'admin';
 
     if (!isOwner && !isAdmin) {
-      showToast('Unauthorized role.', 'error');
+      NotificationService.warning('Unauthorized role.');
       return;
     }
 
     try {
       await orgService.removeMemberFromWorkspace(orgId, targetUid);
       setMembers((prev) => prev.filter((m) => m.uid !== targetUid));
-      showToast(`Removed ${memberName} from workspace.`);
+      NotificationService.success(NOTIFICATION_MESSAGES.MEMBER.REMOVED);
     } catch (err) {
-      showToast(err.message || 'Failed to remove member.', 'error');
+      NotificationService.error(err);
     }
   };
 
@@ -297,9 +293,9 @@ export default function SettingsPage() {
           return m;
         })
       );
-      showToast(`Ownership transferred to ${newOwnerName}. You are now an Admin.`);
+      NotificationService.success(NOTIFICATION_MESSAGES.MEMBER.OWNERSHIP_TRANSFERRED);
     } catch (err) {
-      showToast(err.message || 'Failed to transfer ownership.', 'error');
+      NotificationService.error(err);
     }
   };
 
@@ -307,10 +303,10 @@ export default function SettingsPage() {
   const handleLeaveWorkspace = async () => {
     try {
       await orgService.leaveWorkspace(orgId, user.uid);
-      showToast('You left the workspace.');
+      NotificationService.success(NOTIFICATION_MESSAGES.WORKSPACE.LEFT);
       navigate('/dashboard');
     } catch (err) {
-      showToast(err.message || 'Failed to leave workspace.', 'error');
+      NotificationService.error(err);
     }
   };
 
@@ -318,10 +314,10 @@ export default function SettingsPage() {
     setIsDeleting(true);
     try {
       await orgService.markWorkspaceForDeletion(orgId);
-      showToast('Workspace marked for deletion. It will be permanently removed in 7 days.', 'success');
+      NotificationService.success(NOTIFICATION_MESSAGES.WORKSPACE.MARKED_DELETION);
       navigate('/dashboard');
     } catch (err) {
-      showToast(err.message || 'Failed to schedule workspace deletion.', 'error');
+      NotificationService.error(err);
       setIsDeleting(false);
       setDeleteStep(0);
     }
@@ -879,15 +875,6 @@ export default function SettingsPage() {
         confirmLabel="Confirm Permanent Delete"
         cancelLabel="No, Keep Workspace"
       />
-
-      {/* Feedback Toast */}
-      {toast.show && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ ...toast, show: false })}
-        />
-      )}
     </div>
   );
 }

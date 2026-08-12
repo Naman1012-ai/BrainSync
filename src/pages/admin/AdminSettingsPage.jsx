@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { adminService } from '../../services/adminService';
+import { NotificationService } from '../../services/notificationService';
+import { NOTIFICATION_MESSAGES } from '../../utils/notificationMessages';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -26,7 +28,6 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [toastMsg, setToastMsg] = useState('');
   const [activeTab, setActiveTab] = useState('general');
 
   useEffect(() => {
@@ -48,9 +49,9 @@ export default function AdminSettingsPage() {
         currentUser.displayName || currentUser.email,
         settings
       );
-      setToastMsg('Platform configuration saved successfully across all services.');
+      NotificationService.success(NOTIFICATION_MESSAGES.ADMIN.SETTINGS_SAVED);
     } catch (err) {
-      setToastMsg(err.message || 'Failed to save settings.');
+      NotificationService.error(err);
     } finally {
       setSaving(false);
     }
@@ -65,7 +66,7 @@ export default function AdminSettingsPage() {
     a.href = url;
     a.download = `brainsync_config_${Date.now()}.json`;
     a.click();
-    setToastMsg('Platform configuration exported as JSON.');
+    NotificationService.success('Platform configuration exported as JSON.');
   };
 
   if (loading || !settings) {
@@ -112,12 +113,6 @@ export default function AdminSettingsPage() {
           </Button>
         </div>
       </div>
-
-      {toastMsg && (
-        <div className="p-3.5 rounded-xl bg-purple-950/80 border border-purple-800 text-xs font-bold text-purple-200 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-purple-400" /> {toastMsg}
-        </div>
-      )}
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">

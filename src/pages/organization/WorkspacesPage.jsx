@@ -6,7 +6,8 @@ import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
-import { Toast } from '../../components/feedback/Toast';
+import { NotificationService } from '../../services/notificationService';
+import { NOTIFICATION_MESSAGES } from '../../utils/notificationMessages';
 import { OrgCard } from '../../features/organizations/OrgCard';
 import { CreateOrgForm } from '../../features/organizations/CreateOrgForm';
 import { JoinOrgForm } from '../../features/organizations/JoinOrgForm';
@@ -25,7 +26,6 @@ export default function WorkspacesPage() {
   // Modals & Feedback
   const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false);
   const [isJoinOrgOpen, setIsJoinOrgOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
 
   // Load Workspaces
   const loadWorkspaces = useCallback(async () => {
@@ -55,21 +55,22 @@ export default function WorkspacesPage() {
 
   const handleWorkspaceCreated = (newOrg) => {
     setIsCreateOrgOpen(false);
-    setToastMessage('Workspace created successfully.');
+    NotificationService.success(NOTIFICATION_MESSAGES.WORKSPACE.CREATED);
     if (newOrg && newOrg.orgId) {
       setOrganizations((prev) => [newOrg, ...prev]);
-      loadWorkspaces();
       navigate(`/workspaces/${newOrg.orgId}/ideas`);
+    } else {
+      loadWorkspaces();
     }
   };
 
   const handleRestoreWorkspace = async (orgId) => {
     try {
       await orgService.restoreWorkspace(orgId);
-      setToastMessage('Workspace restored successfully.');
+      NotificationService.success(NOTIFICATION_MESSAGES.WORKSPACE.RESTORED);
       loadWorkspaces();
     } catch (err) {
-      setToastMessage('Failed to restore workspace: ' + err.message);
+      NotificationService.error('Failed to restore workspace: ' + err.message);
     }
   };
 
@@ -195,7 +196,7 @@ export default function WorkspacesPage() {
         <JoinOrgForm
           onSuccess={(orgId) => {
             setIsJoinOrgOpen(false);
-            setToastMessage('Joined workspace successfully!');
+            NotificationService.success('Joined workspace successfully!');
             loadWorkspaces();
             if (orgId) {
               navigate(`/workspaces/${orgId}/ideas`);
@@ -203,14 +204,6 @@ export default function WorkspacesPage() {
           }}
         />
       </Modal>
-
-      {/* Toast Notification */}
-      <Toast
-        type="success"
-        message={toastMessage}
-        isOpen={Boolean(toastMessage)}
-        onClose={() => setToastMessage('')}
-      />
     </div>
   );
 }

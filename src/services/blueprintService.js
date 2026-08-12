@@ -30,9 +30,6 @@ export const blueprintService = {
       if (org.ownerId !== leaderUid) {
         throw new Error('Only the Organization Owner can select the winning MVP.');
       }
-      if (org.status === 'project') {
-        throw new Error('An active project has already been selected for this workspace.');
-      }
 
       // 2. Fetch winning idea snapshot
       const winningIdea = await rtdbService.getData(`ideas/${orgId}/${winningIdeaId}`);
@@ -48,11 +45,26 @@ export const blueprintService = {
 
       const timestamp = Date.now();
 
-      // 4. Build Blueprint Document
+      // 4. Build Blueprint Document with metadata fields
       const blueprintData = {
-        blueprintId: orgId,
+        blueprintId: `bp_${orgId}_${winningIdeaId}`,
+        workspaceId: orgId,
         orgId,
+        mvpIdeaId: winningIdeaId,
         ideaId: winningIdeaId,
+        version: '1.0',
+        status: 'completed', // Blueprint initialized from MVP selection
+        
+        // Metadata fields (No fake AI provider strings)
+        aiProvider: null,
+        aiModel: null,
+        generatedAt: null,
+        updatedAt: timestamp,
+        generatedBy: null,
+        createdBy: leaderUid,
+        createdAt: timestamp,
+
+        // Snapshot fields
         ideaTitle: winningIdea.title,
         problemStatement: winningIdea.problemStatement,
         proposedSolution: winningIdea.proposedSolution || '',
@@ -62,7 +74,8 @@ export const blueprintService = {
         authorName: winningIdea.authorName,
         selectedBy: leaderUid,
         selectedAt: timestamp,
-        status: 'Planning', // 'Planning' | 'In Progress' | 'Completed'
+        projectStatus: 'Selected MVP',
+
         voteSummary: {
           totalVotes: winningIdea.voteCount || 0,
         },
@@ -75,12 +88,14 @@ export const blueprintService = {
             authorName: s.authorName,
           })),
         },
-        createdAt: timestamp,
-        updatedAt: timestamp,
       };
 
-      // 5. Save Blueprint
-      await rtdbService.setData(`blueprints/${orgId}`, blueprintData);
+      // 5. Save Blueprint under both per-MVP node and legacy root node for maximum compatibility
+      await Promise.all([
+        rtdbService.setData(`blueprints/${orgId}/${winningIdeaId}`, blueprintData),
+        rtdbService.setData(`blueprints/${orgId}/current`, blueprintData),
+        rtdbService.setData(`blueprints/${orgId}`, blueprintData),
+      ]);
 
       // 6. Archive other organization ideas & mark winning idea as selected
       const allOrgIdeas = (await rtdbService.getData(`ideas/${orgId}`)) || {};
@@ -93,18 +108,26 @@ export const blueprintService = {
           });
         } else {
           await rtdbService.updateData(`ideas/${orgId}/${id}`, {
+            isSelected: false,
             status: 'archived',
             updatedAt: timestamp,
           });
         }
       }
 
-      // 7. Atomic Phase Shift on Organization Document
-      await rtdbService.updateData(`organizations/${orgId}`, {
-        status: 'project',
-        activeProjectId: winningIdeaId,
-        updatedAt: timestamp,
-      });
+      // 7. Atomic Phase Shift on Organization & Workspace Metadata
+      await Promise.all([
+        rtdbService.updateData(`organizations/${orgId}`, {
+          status: 'project',
+          activeProjectId: winningIdeaId,
+          updatedAt: timestamp,
+        }),
+        rtdbService.updateData(`workspaces/${orgId}/metadata`, {
+          status: 'project',
+          selectedIdeaId: winningIdeaId,
+          updatedAt: timestamp,
+        }),
+      ]);
 
       return blueprintData;
     } catch (error) {
@@ -114,21 +137,62 @@ export const blueprintService = {
   },
 
   /**
-   * Fetch single Project Blueprint snapshot.
+   * Fetch single Project Blueprint snapshot for a specific MVP idea or workspace.
    */
-  getBlueprint: async (orgId) => {
+  getBlueprint: async (orgId, mvpIdeaId = null) => {
     if (!orgId) return null;
+    if (mvpIdeaId) {
+      const specificBp = await rtdbService.getData(`blueprints/${orgId}/${mvpIdeaId}`);
+      if (specificBp) return specificBp;
+    }
     return await rtdbService.getData(`blueprints/${orgId}`);
   },
 
   /**
-   * Real-time subscription to Project Blueprint document.
+   * Real-time subscription to Project Blueprint document for a given workspace and MVP idea.
    */
-  subscribeToBlueprint: (orgId, callback) => {
+  subscribeToBlueprint: (orgId, mvpIdeaId, callback) => {
+    // If only 2 arguments are passed (orgId, callback)
+    if (typeof mvpIdeaId === 'function') {
+      const cb = mvpIdeaId;
+      if (!orgId) {
+        cb(null);
+        return () => {};
+      }
+      return rtdbService.subscribe(`blueprints/${orgId}`, cb);
+    }
+
     if (!orgId) {
       callback(null);
       return () => {};
     }
+
+    if (mvpIdeaId) {
+      // First try per-MVP path `blueprints/${orgId}/${mvpIdeaId}`
+      const unsubMvp = rtdbService.subscribe(`blueprints/${orgId}/${mvpIdeaId}`, (data) => {
+        if (data) {
+          callback(data);
+        } else {
+          // Fallback to `blueprints/${orgId}` root if per-MVP path is empty
+          rtdbService.getData(`blueprints/${orgId}`).then((rootBp) => {
+            if (rootBp && (rootBp.mvpIdeaId === mvpIdeaId || rootBp.ideaId === mvpIdeaId || !rootBp.mvpIdeaId)) {
+              callback(rootBp);
+            } else {
+              callback(null);
+            }
+          });
+        }
+      });
+      return unsubMvp;
+    }
+
     return rtdbService.subscribe(`blueprints/${orgId}`, callback);
+  },
+
+  /**
+   * Explicit Subscription to MVP Blueprint.
+   */
+  subscribeToMvpBlueprint: (orgId, mvpIdeaId, callback) => {
+    return blueprintService.subscribeToBlueprint(orgId, mvpIdeaId, callback);
   },
 };

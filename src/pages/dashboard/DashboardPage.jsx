@@ -9,7 +9,8 @@ import { Card } from '../../components/ui/Card';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { Avatar } from '../../components/ui/Avatar';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
-import { Toast } from '../../components/feedback/Toast';
+import { NotificationService } from '../../services/notificationService';
+import { NOTIFICATION_MESSAGES } from '../../utils/notificationMessages';
 import { CreateOrgForm } from '../../features/organizations/CreateOrgForm';
 import { JoinOrgForm } from '../../features/organizations/JoinOrgForm';
 import { formatTimestamp } from '../../utils/formatting';
@@ -65,7 +66,6 @@ export default function DashboardPage() {
   // Modals & Feedback
   const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false);
   const [isJoinOrgOpen, setIsJoinOrgOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
 
   // Silent Background Revalidation Engine
   const revalidateDashboard = useCallback(async () => {
@@ -103,7 +103,7 @@ export default function DashboardPage() {
   const handleWorkspaceCreated = useCallback(
     (newOrg) => {
       setIsCreateOrgOpen(false);
-      setToastMessage('Workspace created successfully.');
+      NotificationService.success(NOTIFICATION_MESSAGES.WORKSPACE.CREATED);
       revalidateDashboard();
       if (newOrg && newOrg.orgId) {
         navigate(`/workspaces/${newOrg.orgId}/ideas`);
@@ -114,7 +114,7 @@ export default function DashboardPage() {
 
   const handleWorkspaceJoined = useCallback(() => {
     setIsJoinOrgOpen(false);
-    setToastMessage('Joined workspace successfully.');
+    NotificationService.success('Joined workspace successfully.');
     revalidateDashboard();
   }, [revalidateDashboard]);
 
@@ -491,14 +491,6 @@ export default function DashboardPage() {
       >
         <JoinOrgForm onSuccess={handleWorkspaceJoined} />
       </Modal>
-
-      {/* Toast Notification */}
-      <Toast
-        type="success"
-        message={toastMessage}
-        isOpen={Boolean(toastMessage)}
-        onClose={() => setToastMessage('')}
-      />
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { useOrg } from '../../hooks/useOrg';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Toast } from '../../components/feedback/Toast';
+import { NotificationService } from '../../services/notificationService';
 import { InviteCodeDisplay } from '../../features/organizations/InviteCodeDisplay';
 import { OrgMemberList } from '../../features/organizations/OrgMemberList';
 import { LeaveOrgButton } from '../../features/organizations/LeaveOrgButton';
@@ -13,7 +13,6 @@ import { Settings, Users } from 'lucide-react';
 export default function MembersPage() {
   const { org, isLeader, members } = useOrg();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
 
   if (!org) return null;
 
@@ -29,27 +28,19 @@ export default function MembersPage() {
             <Users className="h-5 w-5 text-indigo-600" /> Team Roster ({members.length} / {org.teamSizeLimit || 5})
           </h2>
         </div>
-        <OrgMemberList onToast={(msg) => setToastMessage(msg)} />
+        <OrgMemberList onToast={(msg) => NotificationService.info(msg)} />
       </Card>
 
       {/* Leave Org Action */}
       <div className="pt-4 text-center">
-        <LeaveOrgButton onToast={(msg) => setToastMessage(msg)} />
+        <LeaveOrgButton onToast={(msg) => NotificationService.info(msg)} />
       </div>
 
       {/* Org Settings Modal */}
       <OrgSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        onSuccess={(msg) => setToastMessage(msg)}
-      />
-
-      {/* Toast Feedback */}
-      <Toast
-        type="info"
-        message={toastMessage}
-        isOpen={Boolean(toastMessage)}
-        onClose={() => setToastMessage('')}
+        onSuccess={(msg) => NotificationService.success(msg)}
       />
     </div>
   );

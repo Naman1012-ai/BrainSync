@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { adminService } from '../../services/adminService';
+import { NotificationService } from '../../services/notificationService';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -17,7 +18,6 @@ export default function AdminMvpPage() {
   const [mvps, setMvps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
-  const [toastMsg, setToastMsg] = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -39,9 +39,9 @@ export default function AdminMvpPage() {
         mvp.orgId,
         newStatus
       );
-      setToastMsg(`Status for "${mvp.title}" updated to "${newStatus}".`);
+      NotificationService.success(`Status for "${mvp.title}" updated to "${newStatus}".`);
     } catch (err) {
-      setToastMsg(err.message || 'Failed to update MVP status.');
+      NotificationService.error(err);
     } finally {
       setUpdatingId(null);
     }
@@ -71,12 +71,6 @@ export default function AdminMvpPage() {
           {mvps.length} Active Selected MVPs
         </Badge>
       </div>
-
-      {toastMsg && (
-        <div className="p-3.5 rounded-xl bg-purple-950/80 border border-purple-800 text-xs font-bold text-purple-200 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-purple-400" /> {toastMsg}
-        </div>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {mvps.length === 0 ? (

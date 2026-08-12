@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { adminService } from '../../services/adminService';
 import { authService } from '../../services/authService';
+import { NotificationService } from '../../services/notificationService';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -48,7 +49,6 @@ export default function AdminUsersPage() {
   const [suspendReason, setSuspendReason] = useState('');
   const [deletingUser, setDeletingUser] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [toastMsg, setToastMsg] = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -126,11 +126,11 @@ export default function AdminUsersPage() {
         suspendingUser.uid,
         suspendReason
       );
-      setToastMsg(`User ${suspendingUser.displayName || suspendingUser.email} has been suspended.`);
+      NotificationService.success(`User ${suspendingUser.displayName || suspendingUser.email} has been suspended.`);
       setSuspendingUser(null);
       setSuspendReason('');
     } catch (err) {
-      setToastMsg(err.message || 'Failed to suspend user.');
+      NotificationService.error(err.message || 'Failed to suspend user.');
     } finally {
       setActionLoading(false);
     }
@@ -144,9 +144,9 @@ export default function AdminUsersPage() {
         currentUser.displayName || currentUser.email,
         targetUser.uid
       );
-      setToastMsg(`User ${targetUser.displayName || targetUser.email} has been restored.`);
+      NotificationService.success(`User ${targetUser.displayName || targetUser.email} has been restored.`);
     } catch (err) {
-      setToastMsg(err.message || 'Failed to restore user.');
+      NotificationService.error(err.message || 'Failed to restore user.');
     } finally {
       setActionLoading(false);
     }
@@ -155,9 +155,9 @@ export default function AdminUsersPage() {
   const handleSendPasswordReset = async (email) => {
     try {
       await authService.sendPasswordResetEmail(email);
-      setToastMsg(`Password reset link sent to ${email}`);
+      NotificationService.success(`Password reset link sent to ${email}`);
     } catch (err) {
-      setToastMsg(err.message || 'Failed to send password reset email.');
+      NotificationService.error(err.message || 'Failed to send password reset email.');
     }
   };
 
@@ -170,10 +170,10 @@ export default function AdminUsersPage() {
         currentUser.displayName || currentUser.email,
         deletingUser.uid
       );
-      setToastMsg(`User account deleted permanently.`);
+      NotificationService.success(`User account deleted permanently.`);
       setDeletingUser(null);
     } catch (err) {
-      setToastMsg(err.message || 'Failed to delete user.');
+      NotificationService.error(err.message || 'Failed to delete user.');
     } finally {
       setActionLoading(false);
     }
@@ -204,12 +204,6 @@ export default function AdminUsersPage() {
           {processedUsers.length} of {users.length} Users
         </Badge>
       </div>
-
-      {toastMsg && (
-        <div className="p-3.5 rounded-xl bg-purple-950/80 border border-purple-800 text-xs font-bold text-purple-200 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-purple-400" /> {toastMsg}
-        </div>
-      )}
 
       {/* Search, Filter & Controls Bar */}
       <Card className="p-5 bg-slate-900 border border-slate-800 space-y-4">

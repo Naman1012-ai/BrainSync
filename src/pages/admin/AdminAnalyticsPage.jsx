@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { adminService } from '../../services/adminService';
+import { NotificationService } from '../../services/notificationService';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -28,7 +29,6 @@ export default function AdminAnalyticsPage() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('ALL');
-  const [toastMsg, setToastMsg] = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -64,7 +64,7 @@ export default function AdminAnalyticsPage() {
     a.href = url;
     a.download = `brainsync_analytics_${Date.now()}.csv`;
     a.click();
-    setToastMsg('Analytics data exported as CSV.');
+    NotificationService.success('Analytics data exported as CSV.');
   };
 
   if (loading || !analytics) {
@@ -113,12 +113,6 @@ export default function AdminAnalyticsPage() {
           </Button>
         </div>
       </div>
-
-      {toastMsg && (
-        <div className="p-3.5 rounded-xl bg-purple-950/80 border border-purple-800 text-xs font-bold text-purple-200 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-purple-400" /> {toastMsg}
-        </div>
-      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

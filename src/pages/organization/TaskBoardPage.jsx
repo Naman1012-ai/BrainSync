@@ -10,7 +10,6 @@ import { Select } from '../../components/ui/Select';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { LoadingSkeleton } from '../../components/feedback/LoadingSkeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
-import { Toast } from '../../components/feedback/Toast';
 import { ConfirmDialog } from '../../components/feedback/ConfirmDialog';
 import { ErrorBoundary } from '../../components/feedback/ErrorBoundary';
 import { TaskCard } from '../../features/tasks/TaskCard';
@@ -42,7 +41,6 @@ function TaskBoardContent() {
   const [editingTask, setEditingTask] = useState(null);
   const [deletingTask, setDeletingTask] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
 
   if (org && org.status !== 'project') {
     return (
@@ -72,17 +70,14 @@ function TaskBoardContent() {
 
   const handleCreateTask = async (taskData) => {
     await createTask(taskData);
-    setToastMessage('Actionable task added to Sprint Board!');
   };
 
   const handleUpdateTask = async (taskId, updates) => {
     await updateTask(taskId, updates);
-    setToastMessage('Task updated successfully.');
   };
 
   const handleStatusChange = async (taskId, newStatus) => {
     await updateTaskStatus(taskId, newStatus);
-    setToastMessage(`Task status updated to ${newStatus}.`);
   };
 
   const handleConfirmDelete = async () => {
@@ -90,10 +85,9 @@ function TaskBoardContent() {
     setIsDeleting(true);
     try {
       await deleteTask(deletingTask.taskId);
-      setToastMessage('Task removed.');
       setDeletingTask(null);
     } catch (err) {
-      setToastMessage(err.message || 'Failed to delete task.');
+      // Error handled by NotificationService inside TaskContext or Service
     } finally {
       setIsDeleting(false);
     }
@@ -309,14 +303,6 @@ function TaskBoardContent() {
         isLoading={isDeleting}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingTask(null)}
-      />
-
-      {/* Toast Notification */}
-      <Toast
-        type="success"
-        message={toastMessage}
-        isOpen={Boolean(toastMessage)}
-        onClose={() => setToastMessage('')}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { adminService } from '../../services/adminService';
+import { NotificationService } from '../../services/notificationService';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -12,13 +13,9 @@ import {
   Search,
   Star,
   Eye,
-  Trash2,
-  CheckCircle2,
   Globe,
   Briefcase,
   Trophy,
-  MessageSquare,
-  ThumbsUp,
 } from 'lucide-react';
 
 export default function AdminIdeasPage() {
@@ -35,7 +32,6 @@ export default function AdminIdeasPage() {
   const [featuredFilter, setFeaturedFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('NEWEST');
 
-  const [toastMsg, setToastMsg] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
@@ -104,9 +100,9 @@ export default function AdminIdeasPage() {
         idea.isPublic,
         idea.orgId
       );
-      setToastMsg(`Toggled featured status for "${idea.title}"`);
+      NotificationService.success(`Toggled featured status for "${idea.title}"`);
     } catch (err) {
-      setToastMsg(err.message || 'Failed to toggle featured status.');
+      NotificationService.error(err.message || 'Failed to toggle featured status.');
     } finally {
       setActionLoading(false);
     }
@@ -148,12 +144,6 @@ export default function AdminIdeasPage() {
           </Badge>
         </div>
       </div>
-
-      {toastMsg && (
-        <div className="p-3.5 rounded-xl bg-purple-950/80 border border-purple-800 text-xs font-bold text-purple-200 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-purple-400" /> {toastMsg}
-        </div>
-      )}
 
       {/* Controls Bar */}
       <Card className="p-5 bg-slate-900 border border-slate-800 space-y-4">

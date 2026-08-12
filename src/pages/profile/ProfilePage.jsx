@@ -11,7 +11,6 @@ import { Avatar } from '../../components/ui/Avatar';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/feedback/Spinner';
-import { Toast } from '../../components/feedback/Toast';
 import { ConfirmDialog } from '../../components/feedback/ConfirmDialog';
 import { EditProfileModal } from '../../features/profile/EditProfileModal';
 import { DeleteAccountModal } from '../../features/profile/DeleteAccountModal';

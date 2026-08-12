@@ -36,6 +36,133 @@ export const dashboardService = {
   },
 
   /**
+   * Fetch workspace metrics & stats for a specific organization/idea project dashboard.
+   */
+  getDashboardStats: async (orgId, ideaId = null) => {
+    if (!orgId) return null;
+
+    try {
+      // 1. Fetch Org, Idea, Blueprint, Tasks, Members in parallel
+      const [org, idea, bpData, tasksObj, membersObj] = await Promise.all([
+        rtdbService.getData(`organizations/${orgId}`),
+        ideaId ? rtdbService.getData(`ideas/${orgId}/${ideaId}`) : Promise.resolve(null),
+        ideaId
+          ? (rtdbService.getData(`blueprints/${orgId}/${ideaId}`) || rtdbService.getData(`blueprints/${orgId}`))
+          : rtdbService.getData(`blueprints/${orgId}`),
+        rtdbService.getData(`tasks/${orgId}`),
+        rtdbService.getData(`organization_members/${orgId}`),
+      ]);
+
+      const tasksArray = Object.values(tasksObj || {}).filter(
+        (t) => t && !t.isDeleted && (!ideaId || t.ideaId === ideaId || !t.ideaId)
+      );
+
+      const membersArray = Object.values(membersObj || {});
+
+      // Task Status Aggregations
+      const completed = tasksArray.filter((t) => {
+        const s = (t.status || '').toLowerCase();
+        return s === 'completed' || s === 'done';
+      }).length;
+
+      const inProgress = tasksArray.filter((t) => {
+        const s = (t.status || '').toLowerCase();
+        return s === 'in progress' || s === 'in_progress';
+      }).length;
+
+      const todo = tasksArray.filter((t) => {
+        const s = (t.status || '').toLowerCase();
+        return s === 'todo' || s === 'to do';
+      }).length;
+
+      const review = tasksArray.filter((t) => {
+        const s = (t.status || '').toLowerCase();
+        return s === 'review' || s === 'in_review';
+      }).length;
+
+      const now = Date.now();
+      const overdue = tasksArray.filter((t) => {
+        const s = (t.status || '').toLowerCase();
+        const isDone = s === 'completed' || s === 'done';
+        if (isDone || !t.dueDate) return false;
+        const dueTime = new Date(t.dueDate).getTime();
+        return !isNaN(dueTime) && dueTime < now;
+      }).length;
+
+      const total = tasksArray.length;
+
+      // Team Workload Aggregations
+      const assignedUserUids = new Set(
+        tasksArray.map((t) => t.assignedTo || t.assigneeId).filter(Boolean)
+      );
+      const totalMembers = membersArray.length || 1;
+      const withTasks = assignedUserUids.size;
+      const withoutTasks = Math.max(0, totalMembers - withTasks);
+
+      return {
+        org: org || { orgId, name: 'Workspace' },
+        idea: idea || null,
+        blueprint: bpData || null,
+        taskSummary: {
+          total,
+          completed,
+          inProgress,
+          todo,
+          review,
+          overdue,
+        },
+        teamSummary: {
+          totalMembers,
+          withTasks,
+          withoutTasks,
+        },
+      };
+    } catch (err) {
+      console.error('[dashboardService] getDashboardStats error:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Fetch recent activity log for a specific workspace project.
+   */
+  getRecentActivity: async (orgId, ideaId = null) => {
+    if (!orgId) return [];
+
+    try {
+      const tasksObj = await rtdbService.getData(`tasks/${orgId}`);
+      const tasksArray = Object.values(tasksObj || {}).filter(
+        (t) => t && !t.isDeleted && (!ideaId || t.ideaId === ideaId || !t.ideaId)
+      );
+
+      const activityList = [];
+
+      tasksArray.forEach((task) => {
+        const s = (task.status || '').toLowerCase();
+        if (s === 'completed' || s === 'done') {
+          activityList.push({
+            type: 'complete',
+            title: `Task completed: "${task.title}"`,
+            timestamp: task.completedAt || task.updatedAt || task.createdAt || Date.now(),
+          });
+        } else {
+          activityList.push({
+            type: 'create',
+            title: `Task created: "${task.title}" (${task.status || 'Todo'})`,
+            timestamp: task.createdAt || task.updatedAt || Date.now(),
+          });
+        }
+      });
+
+      activityList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      return activityList.slice(0, 10);
+    } catch (err) {
+      console.error('[dashboardService] getRecentActivity error:', err);
+      return [];
+    }
+  },
+
+  /**
    * Real-time Database Data Pipeline: Fetch direct, accurate stats from Firebase RTDB.
    */
   fetchFreshDashboardData: async (user) => {
@@ -51,16 +178,12 @@ export const dashboardService = {
         rtdbService.getData('votes'),
       ]);
 
-      // Filter workspaces where user is an active member or owner and not deleted
       const userOrgs = (allOrgs || []).filter((org) => org && org.isMember && !org.isDeleted);
-
-      // Filter public ideas created by user
       const publicIdeas = Object.values(publicIdeasObj || {}).filter((i) => i && !i.isDeleted);
       const userPublicIdeas = publicIdeas.filter(
         (i) => i.authorId === userId || i.createdBy === userId
       );
 
-      // Filter votes cast by user
       const userVotes = Object.values(votesObj || {}).filter(
         (v) => v && (v.uid === userId || v.userId === userId)
       );

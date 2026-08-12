@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { adminService } from '../../services/adminService';
+import { NotificationService } from '../../services/notificationService';
+import { NOTIFICATION_MESSAGES } from '../../utils/notificationMessages';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -24,7 +26,6 @@ export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [toastMsg, setToastMsg] = useState('');
 
   // Form State
   const [title, setTitle] = useState('');
@@ -57,12 +58,12 @@ export default function AdminAnnouncementsPage() {
         currentUser.displayName || currentUser.email,
         { title, description, category, priority, targetAudience, expireHours, isPinned }
       );
-      setToastMsg(`Published announcement "${title.trim()}".`);
+      NotificationService.success(NOTIFICATION_MESSAGES.ANNOUNCEMENT.PUBLISHED);
       setShowCreateModal(false);
       setTitle('');
       setDescription('');
     } catch (err) {
-      setToastMsg(err.message || 'Failed to create announcement.');
+      NotificationService.error(err);
     } finally {
       setSubmitting(false);
     }
@@ -75,9 +76,9 @@ export default function AdminAnnouncementsPage() {
         currentUser.displayName || currentUser.email,
         id
       );
-      setToastMsg('Deleted announcement.');
+      NotificationService.success(NOTIFICATION_MESSAGES.ANNOUNCEMENT.DELETED);
     } catch (err) {
-      setToastMsg(err.message || 'Failed to delete announcement.');
+      NotificationService.error(err);
     }
   };
 
@@ -88,9 +89,9 @@ export default function AdminAnnouncementsPage() {
         currentUser.displayName || currentUser.email,
         id
       );
-      setToastMsg('Updated announcement pinned status.');
+      NotificationService.success('Updated announcement pinned status.');
     } catch (err) {
-      setToastMsg(err.message || 'Failed to toggle pin.');
+      NotificationService.error(err);
     }
   };
 
@@ -125,12 +126,6 @@ export default function AdminAnnouncementsPage() {
           Create Announcement
         </Button>
       </div>
-
-      {toastMsg && (
-        <div className="p-3.5 rounded-xl bg-purple-950/80 border border-purple-800 text-xs font-bold text-purple-200 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-purple-400" /> {toastMsg}
-        </div>
-      )}
 
       {/* Announcements List */}
       <div className="space-y-4">

@@ -10,7 +10,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
 import { Spinner } from '../../components/feedback/Spinner';
 import { ErrorMessage } from '../../components/feedback/ErrorMessage';
-import { Toast } from '../../components/feedback/Toast';
+import { NotificationService } from '../../services/notificationService';
 import { DiscussionPanel } from '../../features/discussions/DiscussionPanel';
 import { PublicIdeaDetailModal } from '../../features/ideas/PublicIdeaDetailModal';
 import { formatTimestamp } from '../../utils/formatting';
@@ -53,7 +53,6 @@ export default function IdeaDetailPage() {
   const [hasVoted, setHasVoted] = useState(false);
   const [voteCount, setVoteCount] = useState(0);
   const [isVoting, setIsVoting] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     if (!orgId || !ideaId) return;
@@ -320,7 +319,7 @@ export default function IdeaDetailPage() {
         <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
           <MessageCircle className="h-5 w-5 text-indigo-600" /> Discussion & Technical Refinement
         </h2>
-        <DiscussionPanel idea={idea} onToast={(msg) => setToastMessage(msg)} />
+        <DiscussionPanel idea={idea} onToast={(msg) => NotificationService.info(msg)} />
       </div>
 
       {/* View Original Public Idea Modal */}
@@ -328,15 +327,7 @@ export default function IdeaDetailPage() {
         isOpen={isOriginalPublicIdeaModalOpen}
         idea={originalPublicIdea}
         onClose={() => setIsOriginalPublicIdeaModalOpen(false)}
-        onToast={(msg) => setToastMessage(msg)}
-      />
-
-      {/* Toast Feedback */}
-      <Toast
-        type="info"
-        message={toastMessage}
-        isOpen={Boolean(toastMessage)}
-        onClose={() => setToastMessage('')}
+        onToast={(msg) => NotificationService.info(msg)}
       />
     </div>
   );
