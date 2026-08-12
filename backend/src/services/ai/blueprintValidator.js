@@ -56,6 +56,17 @@ export function validateBlueprintOutput(jsonObj) {
     throw new Error('Validated Blueprint output must be a non-null object.');
   }
 
+  // Auto-populate default empty structures for community feedback sections if omitted (e.g. when idea has 0 comments)
+  if (!jsonObj.suggestionsAnalysis) jsonObj.suggestionsAnalysis = [];
+  if (!jsonObj.commentsAnalysis) jsonObj.commentsAnalysis = [];
+  if (!jsonObj.questionsAnalysis) jsonObj.questionsAnalysis = [];
+  if (!jsonObj.communityInsightsSummary) {
+    jsonObj.communityInsightsSummary = {
+      summary: 'No community feedback recorded yet for this idea proposal.',
+      keyTakeaways: [],
+    };
+  }
+
   const missingSections = [];
   for (const section of REQUIRED_SECTIONS) {
     if (!(section in jsonObj) || jsonObj[section] === null || jsonObj[section] === undefined) {
