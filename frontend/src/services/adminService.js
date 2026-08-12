@@ -19,6 +19,7 @@ export const adminService = {
     let publicIdeasData = {};
     let tasksData = {};
     let reportsData = {};
+    let blueprintsData = {};
 
     let unsubscribeFunctions = [];
 
@@ -48,6 +49,23 @@ export const adminService = {
       const projectIdeas = allIdeas.filter((i) => i.projectStatus === 'Project' || i.status === 'selected').length;
       const completedIdeas = allIdeas.filter((i) => i.projectStatus === 'Completed' || i.status === 'completed').length;
       const archivedIdeas = allIdeas.filter((i) => i.projectStatus === 'Archived' || i.status === 'archived').length;
+
+      // Extract all AI Blueprints across workspaces
+      let allBlueprints = [];
+      Object.values(blueprintsData || {}).forEach((wsObj) => {
+        if (wsObj && typeof wsObj === 'object') {
+          Object.values(wsObj).forEach((bp) => {
+            if (bp && typeof bp === 'object' && (bp.blueprintId || bp.status || bp.content || bp.ideaTitle)) {
+              allBlueprints.push(bp);
+            }
+          });
+        }
+      });
+
+      const totalBlueprints = allBlueprints.length;
+      const completedBlueprints = allBlueprints.filter((b) => b.status === 'completed').length;
+      const generatingBlueprints = allBlueprints.filter((b) => b.status === 'generating').length;
+      const failedBlueprints = allBlueprints.filter((b) => b.status === 'failed').length;
 
       const tasksMapList = Object.values(tasksData || {});
       let allTasks = [];
@@ -110,6 +128,24 @@ export const adminService = {
         }
       });
 
+      allBlueprints.forEach((b) => {
+        if (b.generationCompletedAt || b.updatedAt) {
+          const isCompleted = b.status === 'completed';
+          activityFeed.push({
+            id: `act_bp_${b.blueprintId || b.updatedAt}`,
+            type: isCompleted ? 'blueprint_generated' : b.status === 'failed' ? 'blueprint_failed' : 'blueprint_started',
+            title: isCompleted
+              ? `AI Blueprint Generated: "${b.ideaTitle || 'MVP'}" (v${b.version || '1.0'})`
+              : b.status === 'failed'
+              ? `AI Blueprint Generation Failed for "${b.ideaTitle || 'MVP'}"`
+              : `AI Blueprint Generation Started for "${b.ideaTitle || 'MVP'}"`,
+            timestamp: b.generationCompletedAt || b.updatedAt,
+            user: b.authorName || 'AI Engine',
+            model: b.aiModel || 'gemini-2.0-flash',
+          });
+        }
+      });
+
       allTasks.forEach((t) => {
         if (t.updatedAt && t.status === 'Completed') {
           activityFeed.push({
@@ -136,21 +172,27 @@ export const adminService = {
         .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
         .slice(0, 8);
 
+      const recentBlueprints = [...allBlueprints]
+        .sort((a, b) => (b.updatedAt || b.generationCompletedAt || 0) - (a.updatedAt || a.generationCompletedAt || 0))
+        .slice(0, 8);
+
       callback({
         metrics: {
           users: { totalUsers, verifiedUsers, onlineUsers },
           workspaces: { totalWorkspaces, activeWorkspaces },
           ideas: { totalIdeas, selectedMvps, projectIdeas, completedIdeas, archivedIdeas },
+          blueprints: { totalBlueprints, completedBlueprints, generatingBlueprints, failedBlueprints },
           tasks: { totalTasks, completedTasks, pendingTasks, overdueTasks },
           reports: { totalReports, openReports, resolvedReports },
         },
-        activityFeed: activityFeed.slice(0, 20),
+        activityFeed: activityFeed.slice(0, 30),
         recentUsers,
         recentWorkspaces,
         recentIdeas,
+        recentBlueprints,
         health: {
           databaseConnected: true,
-          activeListenersCount: 6,
+          activeListenersCount: 7,
           lastSyncTimestamp: Date.now(),
         },
       });
@@ -176,6 +218,11 @@ export const adminService = {
       computeAndEmit();
     });
 
+    const unsubBlueprints = rtdbService.subscribe('blueprints', (data) => {
+      blueprintsData = data || {};
+      computeAndEmit();
+    });
+
     const unsubTasks = rtdbService.subscribe('tasks', (data) => {
       tasksData = data || {};
       computeAndEmit();
@@ -191,6 +238,7 @@ export const adminService = {
       unsubOrgs,
       unsubIdeas,
       unsubPublicIdeas,
+      unsubBlueprints,
       unsubTasks,
       unsubReports,
     ];

@@ -30,8 +30,7 @@ export function AdminGuard() {
     userProfile?.role === 'superadmin' ||
     userProfile?.role === 'admin' ||
     userProfile?.isAdmin === true ||
-    (adminEnvEmail && userEmail === adminEnvEmail) ||
-    user.email === userProfile?.email
+    (adminEnvEmail && userEmail === adminEnvEmail)
   );
 
   if (!isAdmin) {

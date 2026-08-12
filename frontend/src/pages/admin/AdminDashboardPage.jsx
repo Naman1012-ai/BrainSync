@@ -81,7 +81,7 @@ export default function AdminDashboardPage() {
           <TrendingUp className="h-4 w-4" /> Platform Core Telemetry & Metrics
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* 1. Users Card */}
           <Card className="p-5 bg-slate-900 border border-slate-800 space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
@@ -115,7 +115,7 @@ export default function AdminDashboardPage() {
           {/* 3. Ideas Card */}
           <Card className="p-5 bg-slate-900 border border-slate-800 space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Proposals</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Proposals</span>
               <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
                 <Lightbulb className="h-5 w-5" />
               </div>
@@ -123,12 +123,26 @@ export default function AdminDashboardPage() {
             <div className="text-3xl font-black text-white">{metrics.ideas.totalIdeas}</div>
             <div className="flex items-center gap-3 text-xs text-slate-400 pt-1 font-medium">
               <span className="text-amber-400 font-bold">{metrics.ideas.selectedMvps} Selected MVPs</span>
-              <span>·</span>
-              <span className="text-emerald-400 font-bold">{metrics.ideas.completedIdeas} Done</span>
             </div>
           </Card>
 
-          {/* 4. Sprint Tasks Card */}
+          {/* 4. AI Blueprints Card */}
+          <Card className="p-5 bg-slate-900 border border-slate-800 space-y-3 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">AI Blueprints</span>
+              <div className="p-2 rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20">
+                <Sparkles className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="text-3xl font-black text-white">{metrics.blueprints?.totalBlueprints || 0}</div>
+            <div className="flex items-center gap-3 text-xs text-slate-400 pt-1 font-medium">
+              <span className="text-emerald-400 font-bold">{metrics.blueprints?.completedBlueprints || 0} Completed</span>
+              <span>·</span>
+              <span className="text-indigo-400 font-bold">{metrics.blueprints?.generatingBlueprints || 0} Generating</span>
+            </div>
+          </Card>
+
+          {/* 5. Sprint Tasks Card */}
           <Card className="p-5 bg-slate-900 border border-slate-800 space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Sprint Tasks</span>
@@ -138,7 +152,7 @@ export default function AdminDashboardPage() {
             </div>
             <div className="text-3xl font-black text-white">{metrics.tasks.totalTasks}</div>
             <div className="flex items-center gap-3 text-xs text-slate-400 pt-1 font-medium">
-              <span className="text-emerald-400 font-bold">{metrics.tasks.completedTasks} Completed</span>
+              <span className="text-emerald-400 font-bold">{metrics.tasks.completedTasks} Done</span>
               <span>·</span>
               <span className="text-rose-400 font-bold">{metrics.tasks.overdueTasks} Overdue</span>
             </div>
@@ -226,7 +240,69 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      {/* SECTION 3 — Recent Users Table */}
+      {/* SECTION 3 — Live AI Blueprints Telemetry Stream */}
+      <Card className="p-6 bg-slate-900 border border-slate-800 space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h2 className="text-sm font-extrabold uppercase tracking-wider text-white flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-pink-400" /> Recent AI Blueprints Telemetry Stream
+          </h2>
+          <span className="text-xs text-slate-400 font-mono">
+            {data.recentBlueprints?.length || 0} Blueprints
+          </span>
+        </div>
+
+        {(!data.recentBlueprints || data.recentBlueprints.length === 0) ? (
+          <div className="text-center py-6 text-xs text-slate-500 italic">
+            No AI Blueprints generated yet across the platform.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-medium text-slate-300">
+              <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-mono border-b border-slate-800">
+                <tr>
+                  <th className="p-3">Proposal / MVP Title</th>
+                  <th className="p-3">Version</th>
+                  <th className="p-3">AI Model</th>
+                  <th className="p-3">Generated Date</th>
+                  <th className="p-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {data.recentBlueprints.map((bp, idx) => (
+                  <tr key={bp.blueprintId || bp.updatedAt || idx} className="hover:bg-slate-850 transition-colors">
+                    <td className="p-3 font-bold text-white flex items-center gap-2">
+                      <Sparkles className="h-3.5 w-3.5 text-pink-400 shrink-0" />
+                      <span className="line-clamp-1">{bp.ideaTitle || 'MVP Blueprint'}</span>
+                    </td>
+                    <td className="p-3 text-purple-300 font-mono font-bold">
+                      v{bp.version || '1.0'}
+                    </td>
+                    <td className="p-3 text-slate-400 font-mono">
+                      {bp.aiModel || 'gemini-2.0-flash'}
+                    </td>
+                    <td className="p-3 text-slate-400 font-mono">
+                      {formatTimestamp(bp.generationCompletedAt || bp.updatedAt)}
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        bp.status === 'completed'
+                          ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                          : bp.status === 'failed'
+                          ? 'bg-rose-950 text-rose-400 border border-rose-800'
+                          : 'bg-indigo-950 text-indigo-400 border border-indigo-800 animate-pulse'
+                      }`}>
+                        {bp.status === 'completed' ? '✓ Completed' : bp.status === 'failed' ? '💥 Failed' : '⚡ Generating'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      {/* SECTION 4 — Recent Users Table */}
       <Card className="p-6 bg-slate-900 border border-slate-800 space-y-4">
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <h2 className="text-sm font-extrabold uppercase tracking-wider text-white flex items-center gap-2">

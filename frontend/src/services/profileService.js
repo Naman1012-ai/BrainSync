@@ -25,15 +25,28 @@ export const profileService = {
     if (!user || !user.uid) return null;
 
     try {
+      const adminEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@brainsync.com').toLowerCase().trim();
+      const userEmail = (user.email || '').toLowerCase().trim();
+      const isAdminEmail = Boolean(adminEmail && userEmail === adminEmail);
+
       const exists = await profileService.profileExists(user.uid);
       if (exists) {
-        // Profile already exists; do not overwrite existing information
-        return await profileService.getUserProfile(user.uid);
+        // Profile already exists; update role if email matches admin email
+        const existingProfile = await profileService.getUserProfile(user.uid);
+        if (isAdminEmail && (!existingProfile?.isAdmin || existingProfile?.role !== 'superadmin')) {
+          await rtdbService.updateData(`users/${user.uid}`, {
+            role: 'superadmin',
+            isAdmin: true,
+            updatedAt: rtdbService.getTimestamp(),
+          });
+          return { ...existingProfile, role: 'superadmin', isAdmin: true };
+        }
+        return existingProfile;
       }
 
       const profileData = {
         uid: user.uid,
-        displayName: user.displayName || additionalData.displayName || 'User',
+        displayName: user.displayName || additionalData.displayName || (isAdminEmail ? 'Super Admin' : 'User'),
         email: user.email || '',
         photoURL: user.photoURL || null,
         joinedAt: rtdbService.getTimestamp(),
@@ -41,6 +54,8 @@ export const profileService = {
         organizationId: null,
         profileCompleted: true,
         onlineStatus: 'online',
+        role: isAdminEmail ? 'superadmin' : 'user',
+        isAdmin: isAdminEmail,
       };
 
       await rtdbService.setData(`users/${user.uid}`, profileData);
