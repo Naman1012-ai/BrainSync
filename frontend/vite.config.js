@@ -15,7 +15,6 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ''),
       'process.env.GEMINI_MODEL': JSON.stringify(env.GEMINI_MODEL || env.VITE_GEMINI_MODEL || 'gemini-2.0-flash'),
     },
     server: {

@@ -1,0 +1,17 @@
+{
+  "name": "brainsync-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "node backend/src/index.js",
+    "build:frontend": "npm run build --prefix frontend"
+  },
+  "dependencies": {
+    "@google/genai": "^2.16.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "uploadthing": "^7.7.4"
+  }
+}

@@ -1,21 +1,21 @@
 import { rtdbService } from './rtdbService';
+import { apiClient } from './apiClient';
 import { getErrorMessage } from '../utils/errorMessages';
-import { blueprintController } from '../../server/controllers/blueprintController.js';
-import { generateBlueprintPdf, getSafeFilename } from './blueprintPdfGenerator.js';
+import { generateBlueprintPdf } from './blueprintPdfGenerator.js';
 
 /**
  * Service Layer for AI Blueprint Preparation & Context Formatting.
- * Acts as the boundary between the Frontend and Backend Gemini Service.
+ * Acts as the boundary between Frontend UI and Backend Express Server.
  */
 export const aiBlueprintService = {
   /**
-   * Client-facing method to trigger AI Blueprint Generation via backend controller.
+   * Client-facing method to trigger AI Blueprint Generation via backend endpoint.
    */
   generateBlueprint: async (workspaceId, userUid) => {
     if (!workspaceId || !userUid) {
       throw new Error('Workspace ID and User UID are required.');
     }
-    return await blueprintController.generateBlueprintHandler(workspaceId, userUid);
+    return await apiClient.post('/api/blueprint/generate', { workspaceId, userUid });
   },
 
   /**
@@ -25,17 +25,17 @@ export const aiBlueprintService = {
     if (!workspaceId || !userUid) {
       throw new Error('Workspace ID and User UID are required.');
     }
-    return await blueprintController.recoverStaleGenerationHandler(workspaceId, userUid);
+    return await apiClient.post('/api/blueprint/recover', { workspaceId, userUid });
   },
 
   /**
-   * Client-facing method to save manual Blueprint updates via backend controller.
+   * Client-facing method to save manual Blueprint updates via backend endpoint.
    */
   updateBlueprint: async (workspaceId, userUid, updatedContent) => {
     if (!workspaceId || !userUid || !updatedContent) {
       throw new Error('Workspace ID, User UID, and Updated Content payload are required.');
     }
-    return await blueprintController.updateBlueprintHandler(workspaceId, userUid, updatedContent);
+    return await apiClient.put('/api/blueprint/update', { workspaceId, userUid, updatedContent });
   },
 
   /**
@@ -45,7 +45,7 @@ export const aiBlueprintService = {
     if (!workspaceId || !userUid) {
       throw new Error('Workspace ID and User UID are required.');
     }
-    const result = await blueprintController.exportJsonHandler(workspaceId, userUid);
+    const result = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid });
 
     const blob = new Blob([result.jsonString], { type: 'application/json;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -68,7 +68,7 @@ export const aiBlueprintService = {
       throw new Error('Workspace ID and User UID are required.');
     }
 
-    const jsonResult = await blueprintController.exportJsonHandler(workspaceId, userUid);
+    const jsonResult = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid });
     const blueprintDoc = jsonResult.exportData;
 
     const { doc, filename } = generateBlueprintPdf(blueprintDoc, orgName);
@@ -87,7 +87,7 @@ export const aiBlueprintService = {
     if (!workspaceId || !userUid) {
       throw new Error('Workspace ID and User UID are required.');
     }
-    return await blueprintController.analyzeCommunityIntelligenceHandler(workspaceId, userUid);
+    return await apiClient.post('/api/blueprint/analyze-community', { workspaceId, userUid });
   },
 
   /**

@@ -15,20 +15,28 @@ function getEnvVar(key, fallback = '') {
   return fallback;
 }
 
-/**
- * Wrap long-running promises with a hard timeout to prevent hanging API requests.
- */
-function withTimeout(promise, ms = 45000, errorMessage = 'API request timed out.') {
-  let timeoutId;
-  const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(new Error(errorMessage));
-    }, ms);
-  });
+function withTimeout(promiseFn, ms = 45000, errorMessage = 'API request timed out.', retries = 1) {
+  const executeCall = async (attempt) => {
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(errorMessage)), ms);
+    });
 
-  return Promise.race([promise, timeoutPromise]).finally(() => {
-    clearTimeout(timeoutId);
-  });
+    try {
+      const callPromise = typeof promiseFn === 'function' ? promiseFn() : promiseFn;
+      return await Promise.race([callPromise, timeoutPromise]);
+    } catch (err) {
+      if (attempt < retries) {
+        console.warn(`⚠️ [geminiService] Attempt ${attempt + 1} failed (${err.message}). Retrying...`);
+        return await executeCall(attempt + 1);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
+
+  return executeCall(0);
 }
 
 /**

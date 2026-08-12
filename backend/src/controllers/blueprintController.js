@@ -1,5 +1,5 @@
-import { rtdbService } from '../../src/services/rtdbService.js';
-import { aiBlueprintService } from '../../src/services/aiBlueprintService.js';
+import { rtdbService } from '../services/rtdbService.js';
+import { aiBlueprintService } from '../services/aiBlueprintService.js';
 import { geminiService } from '../services/ai/geminiService.js';
 import { validateBlueprintOutput } from '../services/ai/blueprintValidator.js';
 
@@ -230,22 +230,29 @@ export const blueprintController = {
 
       console.log(`💾 [Blueprint Persistence Started] Saving Version ${nextVersion} to RTDB version history...`);
 
+      const existingVersions = (await rtdbService.getData(`blueprints/${workspaceId}/${activeMvpId}/versions`)) || 
+                             existingBp?.versions || 
+                             {};
+
+      if (existingBp && existingBp.status === 'completed' && existingBp.version && existingBp.content) {
+        const prevVersionKey = `v${String(existingBp.version).replace(/\./g, '_')}`;
+        const prevSnapshot = { ...existingBp };
+        delete prevSnapshot.versions;
+        existingVersions[prevVersionKey] = prevSnapshot;
+      }
+
       const versionKey = `v${nextVersion.replace(/\./g, '_')}`;
+      const newSnapshot = { ...completeBlueprintDocument };
+      delete newSnapshot.versions;
+      existingVersions[versionKey] = newSnapshot;
+
+      completeBlueprintDocument.versions = existingVersions;
 
       const savePromises = [
         rtdbService.setData(`blueprints/${workspaceId}/${activeMvpId}`, completeBlueprintDocument),
         rtdbService.setData(`blueprints/${workspaceId}/current`, completeBlueprintDocument),
         rtdbService.setData(`blueprints/${workspaceId}`, completeBlueprintDocument),
-        rtdbService.setData(`blueprints/${workspaceId}/${activeMvpId}/versions/${versionKey}`, completeBlueprintDocument),
       ];
-
-      // Preserve existing completed version (e.g. v1.0) under versions history path if not already saved
-      if (existingBp && existingBp.status === 'completed' && existingBp.version && existingBp.content) {
-        const prevVersionKey = `v${String(existingBp.version).replace(/\./g, '_')}`;
-        savePromises.push(
-          rtdbService.setData(`blueprints/${workspaceId}/${activeMvpId}/versions/${prevVersionKey}`, existingBp)
-        );
-      }
 
       await Promise.all(savePromises);
 
