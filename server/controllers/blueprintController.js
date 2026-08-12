@@ -228,15 +228,28 @@ export const blueprintController = {
         },
       };
 
-      console.log(`💾 [Blueprint Persistence Started] Saving Version ${nextVersion} to RTDB...`);
+      console.log(`💾 [Blueprint Persistence Started] Saving Version ${nextVersion} to RTDB version history...`);
 
-      await Promise.all([
+      const versionKey = `v${nextVersion.replace(/\./g, '_')}`;
+
+      const savePromises = [
         rtdbService.setData(`blueprints/${workspaceId}/${activeMvpId}`, completeBlueprintDocument),
         rtdbService.setData(`blueprints/${workspaceId}/current`, completeBlueprintDocument),
         rtdbService.setData(`blueprints/${workspaceId}`, completeBlueprintDocument),
-      ]);
+        rtdbService.setData(`blueprints/${workspaceId}/${activeMvpId}/versions/${versionKey}`, completeBlueprintDocument),
+      ];
 
-      console.log(`🎉 [Blueprint Generation Completed] Version ${nextVersion} successfully saved for workspace ${workspaceId}`);
+      // Preserve existing completed version (e.g. v1.0) under versions history path if not already saved
+      if (existingBp && existingBp.status === 'completed' && existingBp.version && existingBp.content) {
+        const prevVersionKey = `v${String(existingBp.version).replace(/\./g, '_')}`;
+        savePromises.push(
+          rtdbService.setData(`blueprints/${workspaceId}/${activeMvpId}/versions/${prevVersionKey}`, existingBp)
+        );
+      }
+
+      await Promise.all(savePromises);
+
+      console.log(`🎉 [Blueprint Generation Completed] Version ${nextVersion} successfully saved to version history for workspace ${workspaceId}`);
 
       return {
         success: true,
@@ -338,10 +351,13 @@ export const blueprintController = {
 
     console.log(`💾 [Blueprint Manual Update Persistence] Saving edits for MVP ${activeMvpId}...`);
 
+    const versionKey = `v${String(existingBp.version || '1.0').replace(/\./g, '_')}`;
+
     await Promise.all([
       rtdbService.setData(`blueprints/${workspaceId}/${activeMvpId}`, updatedBlueprintDocument),
       rtdbService.setData(`blueprints/${workspaceId}/current`, updatedBlueprintDocument),
       rtdbService.setData(`blueprints/${workspaceId}`, updatedBlueprintDocument),
+      rtdbService.setData(`blueprints/${workspaceId}/${activeMvpId}/versions/${versionKey}`, updatedBlueprintDocument),
     ]);
 
     console.log(`✅ [Blueprint Manual Update Completed] Changes saved successfully for workspace ${workspaceId}`);

@@ -62,6 +62,7 @@ import {
   FileCode,
   FileType,
   RefreshCw,
+  History,
 } from 'lucide-react';
 
 const GENERATION_STAGES = [
@@ -83,6 +84,8 @@ export default function BlueprintPage() {
   const [activeMvpId, setActiveMvpId] = useState(null);
   const [mvpIdea, setMvpIdea] = useState(null);
   const [blueprint, setBlueprint] = useState(null);
+  const [blueprintVersions, setBlueprintVersions] = useState([]);
+  const [selectedVersionKey, setSelectedVersionKey] = useState(null);
 
   const [loadingOrg, setLoadingOrg] = useState(true);
   const [loadingIdea, setLoadingIdea] = useState(true);
@@ -223,6 +226,29 @@ export default function BlueprintPage() {
 
     return () => unsubBp();
   }, [orgId, activeMvpId, user?.uid]);
+
+  // 4. Real-time Subscription to Version History List
+  useEffect(() => {
+    if (!orgId || !activeMvpId) {
+      setBlueprintVersions([]);
+      return;
+    }
+
+    const unsubVersions = blueprintService.subscribeToBlueprintVersions(orgId, activeMvpId, (vList) => {
+      setBlueprintVersions(vList || []);
+    });
+
+    return () => unsubVersions();
+  }, [orgId, activeMvpId]);
+
+  // Resolved active/displayed blueprint (supports switching to historical versions)
+  const displayedBlueprint = React.useMemo(() => {
+    if (selectedVersionKey && blueprintVersions.length > 0) {
+      const matched = blueprintVersions.find((v) => v.version === selectedVersionKey);
+      if (matched) return matched;
+    }
+    return blueprint;
+  }, [selectedVersionKey, blueprintVersions, blueprint]);
 
   // Stage Cycle Timer during Generation
   useEffect(() => {
@@ -407,14 +433,14 @@ export default function BlueprintPage() {
   const authorName = mvpIdea.authorName || blueprint?.authorName || 'Team Member';
   const projectStatus = mvpIdea.projectStatus || (mvpIdea.isSelected ? 'Selected MVP' : 'Ideation');
 
-  const isBlueprintCompleted = blueprint && blueprint.status === 'completed' && Boolean(blueprint.content);
-  const isBlueprintFailed = blueprint && blueprint.status === 'failed' && !isBlueprintCompleted;
+  const isBlueprintCompleted = displayedBlueprint && displayedBlueprint.status === 'completed' && Boolean(displayedBlueprint.content);
+  const isBlueprintFailed = displayedBlueprint && displayedBlueprint.status === 'failed' && !isBlueprintCompleted;
 
   // Form or View Content Source
-  const content = isEditing ? editForm : blueprint?.content;
+  const content = isEditing ? editForm : displayedBlueprint?.content;
 
   // Community Intelligence Data
-  const communityData = blueprint?.communityIntelligence || {
+  const communityData = displayedBlueprint?.communityIntelligence || {
     suggestionsAnalysis: content?.suggestionsAnalysis || [],
     commentsAnalysis: content?.commentsAnalysis || [],
     questionsAnalysis: content?.questionsAnalysis || [],
@@ -429,6 +455,24 @@ export default function BlueprintPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-20">
+      {/* Historical Version Alert Banner */}
+      {selectedVersionKey && selectedVersionKey !== blueprint?.version && (
+        <div className="p-4 bg-indigo-950/90 border border-indigo-500/50 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-indigo-200 text-xs shadow-xl animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 font-semibold">
+            <History className="h-5 w-5 text-indigo-400 shrink-0" />
+            <span>Viewing Historical Blueprint (Version <strong>v{selectedVersionKey}</strong>). You can switch back to the latest version anytime.</span>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setSelectedVersionKey(null)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold border-none shrink-0"
+          >
+            Switch to Latest (v{blueprint?.version})
+          </Button>
+        </div>
+      )}
+
       {/* Hero MVP Header Card */}
       <Card className="bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 text-white p-8 shadow-2xl border border-indigo-800/60 relative overflow-hidden">
         <div className="absolute top-0 right-0 h-48 w-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -445,18 +489,44 @@ export default function BlueprintPage() {
               <Badge variant="default" className="bg-slate-800 text-slate-200 font-mono text-xs">
                 Status: {projectStatus}
               </Badge>
-              {blueprint?.version && (
+
+              {/* Version Selector Dropdown for History */}
+              {blueprintVersions.length > 0 ? (
+                <div className="flex items-center gap-1.5 bg-slate-900/90 border border-indigo-500/40 px-2.5 py-0.5 rounded-lg shadow-inner">
+                  <History className="h-3.5 w-3.5 text-indigo-400" />
+                  <span className="text-[11px] font-mono font-bold text-slate-300">Version:</span>
+                  <select
+                    value={selectedVersionKey || blueprint?.version || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === blueprint?.version) {
+                        setSelectedVersionKey(null);
+                      } else {
+                        setSelectedVersionKey(val);
+                      }
+                    }}
+                    className="bg-slate-950 text-emerald-300 text-xs font-bold font-mono px-2 py-0.5 rounded border border-emerald-500/40 focus:outline-none cursor-pointer"
+                  >
+                    {blueprintVersions.map((v) => (
+                      <option key={v.version} value={v.version}>
+                        v{v.version} {v.version === blueprint?.version ? '(Latest)' : `(${formatTimestamp(v.generatedAt || v.updatedAt)})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : displayedBlueprint?.version ? (
                 <Badge variant="default" className="bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono text-xs">
-                  v{blueprint.version}
+                  v{displayedBlueprint.version}
                 </Badge>
-              )}
-              {blueprint?.lastModifiedSource === 'manual' ? (
+              ) : null}
+
+              {displayedBlueprint?.lastModifiedSource === 'manual' ? (
                 <Badge variant="default" className="bg-amber-950 text-amber-300 border border-amber-800 font-mono text-xs flex items-center gap-1">
                   <Edit3 className="h-3 w-3 text-amber-400" /> Manually Edited
                 </Badge>
-              ) : blueprint?.aiProvider ? (
+              ) : displayedBlueprint?.aiProvider ? (
                 <Badge variant="default" className="bg-purple-950 text-purple-300 border border-purple-800 font-mono text-xs flex items-center gap-1">
-                  <Sparkles className="h-3 w-3 text-purple-400" /> Google Gemini ({blueprint.aiModel || '2.0 Flash'})
+                  <Sparkles className="h-3 w-3 text-purple-400" /> Google Gemini ({displayedBlueprint.aiModel || '2.0 Flash'})
                 </Badge>
               ) : null}
             </div>
@@ -815,7 +885,7 @@ export default function BlueprintPage() {
                 </h3>
 
                 {isEditing ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-400 mb-1 font-mono">Primary Database Engine</label>
                       <input
@@ -830,23 +900,168 @@ export default function BlueprintPage() {
                         className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white font-mono"
                       />
                     </div>
+
+                    <div className="space-y-4 pt-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400 font-mono">Schema Entities (Necessary &amp; Optional):</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Plus className="h-3.5 w-3.5" />}
+                          className="text-xs font-bold text-indigo-400 hover:bg-slate-800"
+                          onClick={() => {
+                            setEditForm((prev) => {
+                              const currentDb = prev?.databaseDesign || {};
+                              const currentEnts = currentDb.entities || [];
+                              return {
+                                ...prev,
+                                databaseDesign: {
+                                  ...currentDb,
+                                  entities: [
+                                    ...currentEnts,
+                                    { entityName: 'NewEntity', entityType: 'Necessary Entity', isOptional: false, fields: ['id', 'created_at'], optionalFields: [] },
+                                  ],
+                                },
+                              };
+                            });
+                          }}
+                        >
+                          Add Entity
+                        </Button>
+                      </div>
+
+                      {editForm?.databaseDesign?.entities?.map((entity, i) => (
+                        <div key={i} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                            <input
+                              type="text"
+                              value={entity.entityName || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setEditForm((prev) => {
+                                  const ents = [...(prev?.databaseDesign?.entities || [])];
+                                  ents[i] = { ...ents[i], entityName: val };
+                                  return { ...prev, databaseDesign: { ...(prev?.databaseDesign || {}), entities: ents } };
+                                });
+                              }}
+                              placeholder="Entity Name"
+                              className="bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                            />
+
+                            <select
+                              value={entity.isOptional ? 'optional' : 'necessary'}
+                              onChange={(e) => {
+                                const isOpt = e.target.value === 'optional';
+                                setEditForm((prev) => {
+                                  const ents = [...(prev?.databaseDesign?.entities || [])];
+                                  ents[i] = { ...ents[i], isOptional: isOpt, entityType: isOpt ? 'Optional Entity' : 'Necessary Entity' };
+                                  return { ...prev, databaseDesign: { ...(prev?.databaseDesign || {}), entities: ents } };
+                                });
+                              }}
+                              className="bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                            >
+                              <option value="necessary">Necessary Entity</option>
+                              <option value="optional">Optional Entity</option>
+                            </select>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditForm((prev) => {
+                                  const ents = (prev?.databaseDesign?.entities || []).filter((_, index) => index !== i);
+                                  return { ...prev, databaseDesign: { ...(prev?.databaseDesign || {}), entities: ents } };
+                                });
+                              }}
+                              className="text-xs text-rose-400 hover:text-rose-300 font-bold flex items-center justify-end gap-1"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" /> Remove
+                            </button>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-400 font-mono mb-1">Required Fields (comma-separated):</label>
+                            <input
+                              type="text"
+                              value={Array.isArray(entity.fields) ? entity.fields.join(', ') : ''}
+                              onChange={(e) => {
+                                const fieldsArr = e.target.value.split(',').map((f) => f.trim()).filter(Boolean);
+                                setEditForm((prev) => {
+                                  const ents = [...(prev?.databaseDesign?.entities || [])];
+                                  ents[i] = { ...ents[i], fields: fieldsArr };
+                                  return { ...prev, databaseDesign: { ...(prev?.databaseDesign || {}), entities: ents } };
+                                });
+                              }}
+                              className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-300 font-mono"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-amber-400/80 font-mono mb-1">Optional Fields (comma-separated):</label>
+                            <input
+                              type="text"
+                              value={Array.isArray(entity.optionalFields) ? entity.optionalFields.join(', ') : ''}
+                              onChange={(e) => {
+                                const optFieldsArr = e.target.value.split(',').map((f) => f.trim()).filter(Boolean);
+                                setEditForm((prev) => {
+                                  const ents = [...(prev?.databaseDesign?.entities || [])];
+                                  ents[i] = { ...ents[i], optionalFields: optFieldsArr };
+                                  return { ...prev, databaseDesign: { ...(prev?.databaseDesign || {}), entities: ents } };
+                                });
+                              }}
+                              className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-amber-200/90 font-mono"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <div>
                     <p className="text-xs text-slate-400 font-mono mb-4">Primary Database Engine: <strong className="text-white">{content.databaseDesign?.primaryDatabase}</strong></p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {content.databaseDesign?.entities?.map((entity, i) => (
-                        <div key={i} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                          <span className="text-xs font-black text-purple-300 font-mono uppercase tracking-wider">📦 {entity.entityName}</span>
-                          <div className="flex flex-wrap gap-1.5 pt-1">
-                            {entity.fields?.map((field, fIdx) => (
-                              <span key={fIdx} className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-300 font-mono">
-                                {field}
+                      {content.databaseDesign?.entities?.map((entity, i) => {
+                        const isOptional = entity.isOptional || (entity.entityType && String(entity.entityType).toLowerCase().includes('optional'));
+                        return (
+                          <div key={i} className={`p-4 rounded-xl bg-slate-950 border space-y-3 ${isOptional ? 'border-amber-900/40' : 'border-emerald-900/40'}`}>
+                            <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+                              <span className="text-xs font-black text-purple-300 font-mono uppercase tracking-wider flex items-center gap-1.5">
+                                📦 {entity.entityName}
                               </span>
-                            ))}
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold font-mono uppercase tracking-wider ${
+                                isOptional ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                              }`}>
+                                {isOptional ? 'Optional Entity' : 'Necessary Entity'}
+                              </span>
+                            </div>
+
+                            {/* Required Fields */}
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-slate-400 font-mono block">Required Fields:</span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {(entity.fields || []).map((field, fIdx) => (
+                                  <span key={fIdx} className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-200 font-mono">
+                                    {field}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Optional Fields */}
+                            {entity.optionalFields && entity.optionalFields.length > 0 && (
+                              <div className="space-y-1 pt-1.5 border-t border-slate-900">
+                                <span className="text-[10px] font-bold text-amber-400/80 font-mono block">Optional Fields:</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {entity.optionalFields.map((optField, fIdx) => (
+                                    <span key={fIdx} className="px-2 py-0.5 rounded bg-amber-950/30 border border-amber-800/40 text-[10px] text-amber-200/90 font-mono">
+                                      {optField}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

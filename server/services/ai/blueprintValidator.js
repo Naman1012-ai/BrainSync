@@ -116,6 +116,20 @@ export function validateBlueprintOutput(jsonObj) {
     }
   }
 
+  // Normalize Database Schema Entities (Necessary vs Optional)
+  if (jsonObj.databaseDesign && Array.isArray(jsonObj.databaseDesign.entities)) {
+    jsonObj.databaseDesign.entities = jsonObj.databaseDesign.entities.map((ent) => {
+      const isOpt = Boolean(ent.isOptional || (ent.entityType && String(ent.entityType).toLowerCase().includes('optional')));
+      return {
+        entityName: ent.entityName || 'Entity',
+        entityType: ent.entityType || (isOpt ? 'Optional Entity' : 'Necessary Entity'),
+        isOptional: isOpt,
+        fields: Array.isArray(ent.fields) ? ent.fields : [],
+        optionalFields: Array.isArray(ent.optionalFields) ? ent.optionalFields : [],
+      };
+    });
+  }
+
   return jsonObj;
 }
 

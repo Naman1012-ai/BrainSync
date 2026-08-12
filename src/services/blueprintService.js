@@ -195,4 +195,19 @@ export const blueprintService = {
   subscribeToMvpBlueprint: (orgId, mvpIdeaId, callback) => {
     return blueprintService.subscribeToBlueprint(orgId, mvpIdeaId, callback);
   },
+
+  /**
+   * Real-time subscription to all generated blueprint versions for an MVP.
+   */
+  subscribeToBlueprintVersions: (orgId, mvpIdeaId, callback) => {
+    if (!orgId || !mvpIdeaId) {
+      callback([]);
+      return () => {};
+    }
+    return rtdbService.subscribe(`blueprints/${orgId}/${mvpIdeaId}/versions`, (versionsObj) => {
+      const list = Object.values(versionsObj || {}).filter((v) => v && (v.status === 'completed' || v.version));
+      list.sort((a, b) => (parseFloat(b.version) || 0) - (parseFloat(a.version) || 0));
+      callback(list);
+    });
+  },
 };

@@ -67,10 +67,10 @@ TECHNICAL GUIDELINES:
    - If no tech stack is provided, recommend a modern, robust, hackathon-ready stack (Frontend, Backend, Database, Hosting, APIs) with clear justification.
 2. TEAM ALLOCATION:
    - Use the provided team member names/roles. Do NOT invent unverified personal technical skills. Present team assignments as strategic suggestions based on project requirements.
-3. COMMUNITY INPUT ANALYSIS:
-   - Analyze suggestions, comments, and questions as THREE SEPARATE COLLECTIONS.
-   - Assign each item a relevance level: "high", "medium", "low", or "irrelevant".
-4. OUTPUT FORMAT:
+5. DATABASE DESIGN:
+   - Design a comprehensive database schema. Explicitly include core NECESSARY entities (e.g. Users, Core Resources) with required fields, as well as secondary OPTIONAL entities (e.g. Audit Logs, Analytics Events, Notifications) with optional fields.
+
+OUTPUT FORMAT:
    - You MUST return ONLY valid JSON matching the 16-section BrainSync Blueprint Schema.
    - Do NOT include conversational filler, markdown intro paragraphs, or generic motivational boilerplate.
    - Every recommendation MUST directly address the specific MVP.
@@ -83,7 +83,7 @@ JSON SCHEMA STRUCTURE REQUIRED (16 SECTIONS):
   "coreFeatures": [{ "featureName": "...", "description": "...", "priority": "Must Have" | "Should Have" | "Nice to Have" }],
   "userFlow": [{ "stepNumber": 1, "stepName": "...", "description": "..." }],
   "technicalArchitecture": { "architecturePattern": "...", "components": ["..."], "dataFlowDescription": "..." },
-  "databaseDesign": { "primaryDatabase": "...", "entities": [{ "entityName": "...", "fields": ["..."] }] },
+  "databaseDesign": { "primaryDatabase": "...", "entities": [{ "entityName": "...", "entityType": "Necessary Entity" | "Optional Entity", "isOptional": false, "fields": ["..."], "optionalFields": ["..."] }] },
   "teamAllocation": [{ "memberId": "...", "memberName": "...", "assignedRole": "...", "recommendedTasks": ["..."] }],
   "challengesAndDifficulties": [{ "challenge": "...", "severity": "High" | "Medium" | "Low", "mitigationStrategy": "..." }],
   "innovationAndDifferentiation": { "keyDifferentiators": ["..."], "marketAdvantage": "..." },

@@ -257,20 +257,28 @@ export function generateBlueprintPdf(blueprintDoc, orgName = 'Workspace') {
     }
 
     if (content.databaseDesign?.entities?.length > 0) {
-      const dbRows = content.databaseDesign.entities.map((ent) => [
-        ent.entityName || 'Entity',
-        (ent.fields || []).join(', ') || 'Fields not specified',
-      ]);
+      const dbRows = content.databaseDesign.entities.map((ent) => {
+        const isOpt = ent.isOptional || (ent.entityType && String(ent.entityType).toLowerCase().includes('optional'));
+        const typeBadge = isOpt ? '[Optional Entity]' : '[Necessary Entity]';
+        const reqFields = (ent.fields || []).join(', ') || 'None';
+        const optFields = Array.isArray(ent.optionalFields) && ent.optionalFields.length > 0
+          ? `\n(Optional: ${ent.optionalFields.join(', ')})`
+          : '';
+        return [
+          `${ent.entityName || 'Entity'}\n${typeBadge}`,
+          `Required: ${reqFields}${optFields}`,
+        ];
+      });
 
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
-        head: [['Database Entity / Schema', 'Attributes & Fields']],
+        head: [['Database Entity & Type', 'Required & Optional Attributes']],
         body: dbRows,
         theme: 'striped',
         headStyles: { fillColor: primaryDark, textColor: [255, 255, 255], fontSize: 8.5, fontStyle: 'bold' },
         bodyStyles: { fontSize: 8, textColor: textDark },
-        columnStyles: { 0: { cellWidth: 45, fontStyle: 'bold' } },
+        columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' } },
       });
       y = doc.lastAutoTable.finalY + 6;
     }
