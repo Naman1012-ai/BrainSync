@@ -1,0 +1,7 @@
+{
+  "name": "brainsync-common",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "constants/databasePaths.js"
+}
