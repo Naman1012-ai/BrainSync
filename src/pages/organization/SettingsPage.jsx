@@ -78,6 +78,7 @@ export default function SettingsPage() {
   const [primaryReady, setPrimaryReady] = useState(false);
   const [statsLoading, setStatsLoading] = useState(true);
   const [savingGeneral, setSavingGeneral] = useState(false);
+  const [savingPreferences, setSavingPreferences] = useState(false);
   // Dialog Confirmations
   const [confirmLeave, setConfirmLeave] = useState(false);
   
