@@ -52,10 +52,21 @@ app.use((req, res, next) => {
 app.use(errorHandler);
 
 // Start Express Server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 [BrainSync Backend Server Started] Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Listening on Port: ${PORT} | Allowed Frontend: ${FRONTEND_URL}`);
   console.log(`🩺 Health Check: http://localhost:${PORT}/api/health`);
+});
+
+// Handle Port Conflicts Gracefully
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`🚨 [Port Conflict Error]: Port ${PORT} is already in use by another process.`);
+    console.error(`👉 Solution: Terminate the process on port ${PORT} or change PORT in backend/.env.`);
+    process.exit(1);
+  } else {
+    console.error('🚨 [Server Startup Error]:', err);
+  }
 });
 
 export default app;
