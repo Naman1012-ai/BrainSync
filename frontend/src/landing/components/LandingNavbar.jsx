@@ -5,12 +5,12 @@ import { useScrollPosition } from '../hooks/useScrollPosition';
 import { Zap, Menu, X, ArrowRight, Sparkles, LayoutDashboard } from 'lucide-react';
 
 const NAV_SECTIONS = [
-  { id: 'community-feed', label: 'Feed' },
-  { id: 'features', label: 'Features' },
   { id: 'how-it-works', label: 'How It Works' },
+  { id: 'features', label: 'Features' },
+  { id: 'ai-blueprint', label: 'AI Blueprint' },
   { id: 'use-cases', label: 'Use Cases' },
-  { id: 'pricing', label: 'Pricing' },
-  { id: 'faq-comprehensive', label: 'FAQ' },
+  { id: 'stats', label: 'Telemetry' },
+  { id: 'faq', label: 'FAQ' },
 ];
 
 export function LandingNavbar() {
@@ -92,16 +92,6 @@ export function LandingNavbar() {
                 )}
               </button>
             ))}
-
-            <button
-              onClick={() => scrollToSection('roadmap')}
-              className="flex items-center gap-1.5 hover:text-white transition-colors duration-150 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded px-1.5"
-            >
-              <span>Roadmap</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                Soon
-              </span>
-            </button>
           </nav>
 
           {/* Right Action Buttons (Desktop) */}
@@ -158,16 +148,6 @@ export function LandingNavbar() {
                 <span>{sec.label}</span>
               </button>
             ))}
-
-            <button
-              onClick={() => scrollToSection('roadmap')}
-              className="text-left py-2 hover:text-white transition-colors border-b border-slate-900 flex items-center justify-between"
-            >
-              <span>Roadmap</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                Soon
-              </span>
-            </button>
           </nav>
 
           <div className="pt-2 flex flex-col gap-2.5">

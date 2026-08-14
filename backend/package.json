@@ -12,6 +12,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "firebase-admin": "^14.2.0",
     "uploadthing": "^7.7.4"
   }
 }

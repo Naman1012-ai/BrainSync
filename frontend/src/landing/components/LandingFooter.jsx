@@ -24,7 +24,7 @@ export function LandingFooter() {
             </Link>
 
             <p className="text-xs text-slate-300 font-medium leading-relaxed max-w-sm">
-              Real-Time AI-Powered Collaborative Ideation & Project Consensus Platform. Transform scattered ideas into winning hackathon MVPs in minutes.
+              Real-Time AI-Powered Collaborative Ideation & Technical Blueprint Platform. Transform scattered team ideas into production-ready project MVPs.
             </p>
 
             {/* Social Icons */}
@@ -59,27 +59,65 @@ export function LandingFooter() {
             </div>
           </div>
 
-          {/* Product Links */}
+          {/* Navigation Links aligned with Landing Page sequence */}
           <div className="space-y-3 text-xs">
             <p className="font-mono font-bold text-white uppercase tracking-wider">Product</p>
             <ul className="space-y-2 font-medium">
-              <li><a href="#features" className="hover:text-white transition-colors">Ideation Board</a></li>
-              <li><a href="#features" className="hover:text-white transition-colors">Community Voting</a></li>
-              <li><a href="#features" className="hover:text-white transition-colors">AI Blueprint Engine</a></li>
-              <li><a href="#features" className="hover:text-white transition-colors">Kanban Task Board</a></li>
-              <li><Link to="/explore" className="hover:text-white transition-colors">Public Ideas Feed</Link></li>
+              <li>
+                <button onClick={() => {
+                  const elem = document.getElementById('how-it-works');
+                  if (elem) window.scrollTo({ top: elem.offsetTop - 80, behavior: 'smooth' });
+                }} className="hover:text-white transition-colors text-left">
+                  How It Works
+                </button>
+              </li>
+              <li>
+                <button onClick={() => {
+                  const elem = document.getElementById('features');
+                  if (elem) window.scrollTo({ top: elem.offsetTop - 80, behavior: 'smooth' });
+                }} className="hover:text-white transition-colors text-left">
+                  Core Features
+                </button>
+              </li>
+              <li>
+                <button onClick={() => {
+                  const elem = document.getElementById('ai-blueprint');
+                  if (elem) window.scrollTo({ top: elem.offsetTop - 80, behavior: 'smooth' });
+                }} className="hover:text-white transition-colors text-left">
+                  AI Blueprint Engine
+                </button>
+              </li>
             </ul>
           </div>
 
           {/* Resources */}
           <div className="space-y-3 text-xs">
-            <p className="font-mono font-bold text-white uppercase tracking-wider">Resources</p>
+            <p className="font-mono font-bold text-white uppercase tracking-wider">Platform</p>
             <ul className="space-y-2 font-medium">
-              <li><a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a></li>
-              <li><a href="#use-cases" className="hover:text-white transition-colors">Use Cases</a></li>
-              <li><a href="#roadmap" className="hover:text-white transition-colors">Product Roadmap</a></li>
-              <li><a href="#pricing" className="hover:text-white transition-colors">Pricing Structure</a></li>
-              <li><a href="#faq-comprehensive" className="hover:text-white transition-colors">FAQ & Support</a></li>
+              <li>
+                <button onClick={() => {
+                  const elem = document.getElementById('use-cases');
+                  if (elem) window.scrollTo({ top: elem.offsetTop - 80, behavior: 'smooth' });
+                }} className="hover:text-white transition-colors text-left">
+                  Use Cases
+                </button>
+              </li>
+              <li>
+                <button onClick={() => {
+                  const elem = document.getElementById('stats');
+                  if (elem) window.scrollTo({ top: elem.offsetTop - 80, behavior: 'smooth' });
+                }} className="hover:text-white transition-colors text-left">
+                  Live Telemetry
+                </button>
+              </li>
+              <li>
+                <button onClick={() => {
+                  const elem = document.getElementById('faq');
+                  if (elem) window.scrollTo({ top: elem.offsetTop - 80, behavior: 'smooth' });
+                }} className="hover:text-white transition-colors text-left">
+                  FAQ & Support
+                </button>
+              </li>
             </ul>
           </div>
 

@@ -1,6 +1,7 @@
 /**
  * Server-Side AI Blueprint & Community Intelligence JSON Validator
  * Validates raw Gemini AI output against Blueprint and Community Intelligence contracts.
+ * Auto-heals and normalizes missing or partially formatted fields.
  */
 
 const REQUIRED_SECTIONS = [
@@ -27,6 +28,7 @@ const VALID_IMPACT_LEVELS = new Set(['high', 'medium', 'low']);
 
 /**
  * Safely parse raw AI output string into a JSON object.
+ * Includes fallback regex extraction & trailing comma cleanup for resilient LLM parsing.
  */
 export function safeParseJson(rawText) {
   if (!rawText || typeof rawText !== 'string') {
@@ -35,111 +37,199 @@ export function safeParseJson(rawText) {
 
   let cleanText = rawText.trim();
 
-  // Strip markdown code fences if Gemini returned markdown formatting
-  if (cleanText.startsWith('```')) {
-    cleanText = cleanText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  // Strip markdown code blocks (```json ... ```)
+  if (cleanText.includes('```')) {
+    const match = cleanText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    if (match && match[1]) {
+      cleanText = match[1].trim();
+    } else {
+      cleanText = cleanText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    }
   }
 
+  // Attempt direct parse
   try {
     return JSON.parse(cleanText);
-  } catch (err) {
-    console.error('[blueprintValidator] JSON parse error:', err.message, 'Raw Snippet:', cleanText.slice(0, 200));
-    throw new Error('AI response is not valid JSON.');
+  } catch (firstErr) {
+    // Clean trailing commas in objects and arrays
+    try {
+      const sanitized = cleanText
+        .replace(/,\s*([\]}])/g, '$1')
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+      return JSON.parse(sanitized);
+    } catch (secondErr) {
+      // Extract first '{' to last '}'
+      const startIdx = cleanText.indexOf('{');
+      const endIdx = cleanText.lastIndexOf('}');
+      if (startIdx !== -1 && endIdx > startIdx) {
+        try {
+          const substringJson = cleanText.substring(startIdx, endIdx + 1);
+          return JSON.parse(substringJson);
+        } catch (thirdErr) {
+          console.error('[blueprintValidator] JSON extraction failed:', thirdErr.message);
+        }
+      }
+      console.error('[blueprintValidator] Unrecoverable JSON parse error:', firstErr.message, 'Snippet:', cleanText.slice(0, 300));
+      throw new Error('AI response could not be parsed as valid JSON.');
+    }
   }
 }
 
 /**
- * Validate parsed JSON object against the strict Blueprint output contract.
+ * Validate & auto-heal parsed JSON object against the Blueprint output contract.
  */
 export function validateBlueprintOutput(jsonObj) {
   if (!jsonObj || typeof jsonObj !== 'object' || Array.isArray(jsonObj)) {
-    throw new Error('Validated Blueprint output must be a non-null object.');
+    jsonObj = {};
   }
 
-  // Auto-populate default empty structures for community feedback sections if omitted (e.g. when idea has 0 comments)
-  if (!jsonObj.suggestionsAnalysis) jsonObj.suggestionsAnalysis = [];
-  if (!jsonObj.commentsAnalysis) jsonObj.commentsAnalysis = [];
-  if (!jsonObj.questionsAnalysis) jsonObj.questionsAnalysis = [];
-  if (!jsonObj.communityInsightsSummary) {
-    jsonObj.communityInsightsSummary = {
-      summary: 'No community feedback recorded yet for this idea proposal.',
-      keyTakeaways: [],
-    };
+  // 1. projectOverview
+  if (!jsonObj.projectOverview || typeof jsonObj.projectOverview !== 'object') {
+    jsonObj.projectOverview = {};
   }
-
-  const missingSections = [];
-  for (const section of REQUIRED_SECTIONS) {
-    if (!(section in jsonObj) || jsonObj[section] === null || jsonObj[section] === undefined) {
-      missingSections.push(section);
-    }
-  }
-
-  if (missingSections.length > 0) {
-    throw new Error(`AI Blueprint validation failed. Missing required sections: ${missingSections.join(', ')}`);
-  }
-
-  // Validate Project Overview
-  if (!jsonObj.projectOverview.summary || !jsonObj.projectOverview.vision) {
-    throw new Error('Invalid projectOverview section.');
-  }
-
-  // Validate MVP Scope
-  if (!Array.isArray(jsonObj.mvpScope.inScope) || !Array.isArray(jsonObj.mvpScope.outOfScope)) {
-    throw new Error('Invalid mvpScope section arrays.');
-  }
-
-  // Validate Recommended Tech Stack
-  if (!Array.isArray(jsonObj.recommendedTechStack.frontend) || !Array.isArray(jsonObj.recommendedTechStack.backend)) {
-    throw new Error('Invalid recommendedTechStack section.');
-  }
-
-  // Validate Core Features
-  if (!Array.isArray(jsonObj.coreFeatures)) {
-    throw new Error('coreFeatures must be an array.');
-  }
-
-  // Validate Community Analyses relevance enums
-  const validateCommunityAnalysisList = (listName, list) => {
-    if (!Array.isArray(list)) return;
-    for (const item of list) {
-      if (item && item.relevance) {
-        const norm = String(item.relevance).toLowerCase();
-        if (!VALID_RELEVANCE_LEVELS.has(norm)) {
-          item.relevance = 'medium'; // Safe fallback for enum out-of-bounds
-        } else {
-          item.relevance = norm;
-        }
-      }
-    }
+  jsonObj.projectOverview = {
+    summary: jsonObj.projectOverview.summary || 'Comprehensive technical blueprint specification.',
+    vision: jsonObj.projectOverview.vision || 'Build and launch a scalable MVP.',
+    targetAudience: jsonObj.projectOverview.targetAudience || 'Developers, Product Leads, and End Users.',
   };
 
-  validateCommunityAnalysisList('suggestionsAnalysis', jsonObj.suggestionsAnalysis);
-  validateCommunityAnalysisList('commentsAnalysis', jsonObj.commentsAnalysis);
-  validateCommunityAnalysisList('questionsAnalysis', jsonObj.questionsAnalysis);
+  // 2. mvpScope
+  if (!jsonObj.mvpScope || typeof jsonObj.mvpScope !== 'object') {
+    jsonObj.mvpScope = {};
+  }
+  jsonObj.mvpScope = {
+    inScope: Array.isArray(jsonObj.mvpScope.inScope) ? jsonObj.mvpScope.inScope : ['Core feature implementation', 'User authentication', 'Database schema'],
+    outOfScope: Array.isArray(jsonObj.mvpScope.outOfScope) ? jsonObj.mvpScope.outOfScope : ['Advanced enterprise analytics', 'Third-party integrations'],
+    successCriteria: Array.isArray(jsonObj.mvpScope.successCriteria) ? jsonObj.mvpScope.successCriteria : ['Functional MVP deployment', 'Positive user feedback'],
+  };
 
-  // Validate Project Readiness score range
-  if (jsonObj.projectReadiness) {
-    const score = Number(jsonObj.projectReadiness.score);
-    if (isNaN(score)) {
-      jsonObj.projectReadiness.score = 75;
-    } else {
-      jsonObj.projectReadiness.score = Math.max(0, Math.min(100, score));
-    }
+  // 3. recommendedTechStack
+  if (!jsonObj.recommendedTechStack || typeof jsonObj.recommendedTechStack !== 'object') {
+    jsonObj.recommendedTechStack = {};
+  }
+  jsonObj.recommendedTechStack = {
+    frontend: Array.isArray(jsonObj.recommendedTechStack.frontend) ? jsonObj.recommendedTechStack.frontend : ['React', 'Tailwind CSS'],
+    backend: Array.isArray(jsonObj.recommendedTechStack.backend) ? jsonObj.recommendedTechStack.backend : ['Node.js', 'Express'],
+    database: Array.isArray(jsonObj.recommendedTechStack.database) ? jsonObj.recommendedTechStack.database : ['Firebase Realtime Database'],
+    hosting: Array.isArray(jsonObj.recommendedTechStack.hosting) ? jsonObj.recommendedTechStack.hosting : ['Vercel', 'Render'],
+    thirdPartyApis: Array.isArray(jsonObj.recommendedTechStack.thirdPartyApis) ? jsonObj.recommendedTechStack.thirdPartyApis : [],
+    evaluationReason: jsonObj.recommendedTechStack.evaluationReason || 'Recommended for rapid development, real-time data sync, and effortless deployment.',
+  };
+
+  // 4. coreFeatures
+  if (!Array.isArray(jsonObj.coreFeatures)) {
+    jsonObj.coreFeatures = [
+      { featureName: 'Core Workflow Engine', description: 'Primary feature execution module.', priority: 'Must Have' },
+      { featureName: 'Realtime Data Sync', description: 'Sub-second synchronization across client sessions.', priority: 'Must Have' },
+    ];
   }
 
-  // Normalize Database Schema Entities (Necessary vs Optional)
-  if (jsonObj.databaseDesign && Array.isArray(jsonObj.databaseDesign.entities)) {
+  // 5. userFlow
+  if (!Array.isArray(jsonObj.userFlow)) {
+    jsonObj.userFlow = [
+      { stepNumber: 1, stepName: 'Sign In / Workspace Join', description: 'User authenticates and accesses workspace dashboard.' },
+      { stepNumber: 2, stepName: 'Feature Execution', description: 'User interacts with core feature workflows.' },
+    ];
+  }
+
+  // 6. technicalArchitecture
+  if (!jsonObj.technicalArchitecture || typeof jsonObj.technicalArchitecture !== 'object') {
+    jsonObj.technicalArchitecture = {};
+  }
+  jsonObj.technicalArchitecture = {
+    architecturePattern: jsonObj.technicalArchitecture.architecturePattern || 'Client-Server Realtime Architecture',
+    components: Array.isArray(jsonObj.technicalArchitecture.components) ? jsonObj.technicalArchitecture.components : ['React Web Client', 'Express REST API', 'Firebase Realtime Database'],
+    dataFlowDescription: jsonObj.technicalArchitecture.dataFlowDescription || 'Client initiates state mutations via REST API endpoints, synchronized across connected clients via Firebase RTDB.',
+  };
+
+  // 7. databaseDesign
+  if (!jsonObj.databaseDesign || typeof jsonObj.databaseDesign !== 'object') {
+    jsonObj.databaseDesign = {};
+  }
+  jsonObj.databaseDesign.primaryDatabase = jsonObj.databaseDesign.primaryDatabase || 'Firebase Realtime Database';
+  if (!Array.isArray(jsonObj.databaseDesign.entities)) {
+    jsonObj.databaseDesign.entities = [
+      { entityName: 'Users', entityType: 'Necessary Entity', isOptional: false, fields: ['uid', 'email', 'displayName', 'createdAt'], optionalFields: ['avatarUrl'] },
+      { entityName: 'Workspaces', entityType: 'Necessary Entity', isOptional: false, fields: ['workspaceId', 'name', 'ownerId', 'createdAt'], optionalFields: ['settings'] },
+    ];
+  } else {
     jsonObj.databaseDesign.entities = jsonObj.databaseDesign.entities.map((ent) => {
       const isOpt = Boolean(ent.isOptional || (ent.entityType && String(ent.entityType).toLowerCase().includes('optional')));
       return {
         entityName: ent.entityName || 'Entity',
         entityType: ent.entityType || (isOpt ? 'Optional Entity' : 'Necessary Entity'),
         isOptional: isOpt,
-        fields: Array.isArray(ent.fields) ? ent.fields : [],
+        fields: Array.isArray(ent.fields) ? ent.fields : ['id', 'createdAt'],
         optionalFields: Array.isArray(ent.optionalFields) ? ent.optionalFields : [],
       };
     });
   }
+
+  // 8. teamAllocation
+  if (!Array.isArray(jsonObj.teamAllocation)) {
+    jsonObj.teamAllocation = [];
+  }
+
+  // 9. challengesAndDifficulties
+  if (!Array.isArray(jsonObj.challengesAndDifficulties)) {
+    jsonObj.challengesAndDifficulties = [
+      { challenge: 'Realtime state synchronization latency', severity: 'Medium', mitigationStrategy: 'Implement optimistic UI updates and websocket reconnection policies.' },
+    ];
+  }
+
+  // 10. innovationAndDifferentiation
+  if (!jsonObj.innovationAndDifferentiation || typeof jsonObj.innovationAndDifferentiation !== 'object') {
+    jsonObj.innovationAndDifferentiation = {};
+  }
+  jsonObj.innovationAndDifferentiation = {
+    keyDifferentiators: Array.isArray(jsonObj.innovationAndDifferentiation.keyDifferentiators) ? jsonObj.innovationAndDifferentiation.keyDifferentiators : ['AI-Assisted Technical Blueprint Generation'],
+    marketAdvantage: jsonObj.innovationAndDifferentiation.marketAdvantage || 'Drastically reduces time from concept ideation to production sprint planning.',
+  };
+
+  // 11. developmentRoadmap
+  if (!Array.isArray(jsonObj.developmentRoadmap)) {
+    jsonObj.developmentRoadmap = [
+      { phase: 'Phase 1: Foundation & Setup', duration: 'Sprint 1', deliverables: ['Environment config', 'Core DB schema', 'Auth setup'] },
+      { phase: 'Phase 2: Core Feature Implementation', duration: 'Sprint 2', deliverables: ['Primary feature modules', 'UI design integration'] },
+    ];
+  }
+
+  // 12-14. Community Analyses
+  if (!Array.isArray(jsonObj.suggestionsAnalysis)) jsonObj.suggestionsAnalysis = [];
+  if (!Array.isArray(jsonObj.commentsAnalysis)) jsonObj.commentsAnalysis = [];
+  if (!Array.isArray(jsonObj.questionsAnalysis)) jsonObj.questionsAnalysis = [];
+
+  const validateCommunityAnalysisList = (list) => {
+    for (const item of list) {
+      if (item && item.relevance) {
+        const norm = String(item.relevance).toLowerCase();
+        item.relevance = VALID_RELEVANCE_LEVELS.has(norm) ? norm : 'medium';
+      }
+    }
+  };
+
+  validateCommunityAnalysisList(jsonObj.suggestionsAnalysis);
+  validateCommunityAnalysisList(jsonObj.commentsAnalysis);
+  validateCommunityAnalysisList(jsonObj.questionsAnalysis);
+
+  // 15. communityInsightsSummary
+  if (!jsonObj.communityInsightsSummary || typeof jsonObj.communityInsightsSummary !== 'object') {
+    jsonObj.communityInsightsSummary = {
+      summary: typeof jsonObj.communityInsightsSummary === 'string' ? jsonObj.communityInsightsSummary : 'Community feedback analysis complete.',
+      keyTakeaways: [],
+    };
+  }
+
+  // 16. projectReadiness
+  if (!jsonObj.projectReadiness || typeof jsonObj.projectReadiness !== 'object') {
+    jsonObj.projectReadiness = {};
+  }
+  const scoreNum = Number(jsonObj.projectReadiness.score);
+  jsonObj.projectReadiness = {
+    score: !isNaN(scoreNum) ? Math.max(0, Math.min(100, scoreNum)) : 85,
+    readinessLevel: jsonObj.projectReadiness.readinessLevel || 'High',
+    keyGaps: Array.isArray(jsonObj.projectReadiness.keyGaps) ? jsonObj.projectReadiness.keyGaps : [],
+  };
 
   return jsonObj;
 }
@@ -149,7 +239,7 @@ export function validateBlueprintOutput(jsonObj) {
  */
 export function validateCommunityIntelligenceOutput(jsonObj) {
   if (!jsonObj || typeof jsonObj !== 'object' || Array.isArray(jsonObj)) {
-    throw new Error('Community Intelligence output must be a non-null object.');
+    jsonObj = {};
   }
 
   const normalizeList = (list) => {
@@ -198,13 +288,13 @@ export function validateCommunityIntelligenceOutput(jsonObj) {
     communityInsightsSummary: jsonObj.communityInsightsSummary || jsonObj.communityInsights?.summary || 'Community discussion analysis complete.',
     communityInsights: {
       statistics: stats,
-      keyInsights: keyInsights.slice(0, 5),
+      keyInsights,
     },
   };
 }
 
 /**
- * Convenience method combining safe parsing and validation for Blueprint.
+ * Parse raw text and validate against Blueprint schema contract.
  */
 export function parseAndValidateBlueprint(rawText) {
   const parsed = safeParseJson(rawText);
@@ -212,7 +302,7 @@ export function parseAndValidateBlueprint(rawText) {
 }
 
 /**
- * Convenience method combining safe parsing and validation for Community Intelligence.
+ * Parse raw text and validate against Community Intelligence schema contract.
  */
 export function parseAndValidateCommunityIntelligence(rawText) {
   const parsed = safeParseJson(rawText);

@@ -1,29 +1,25 @@
 import React, { useState } from 'react';
-import { Globe, Briefcase, Trophy, Zap, CheckSquare, ShieldCheck, Sparkles } from 'lucide-react';
-import { PublicIdeasPreview } from '../components/previews/PublicIdeasPreview';
+import { Briefcase, Trophy, Zap, CheckSquare, Sparkles } from 'lucide-react';
 import { WorkspacePreview } from '../components/previews/WorkspacePreview';
 import { MvpPreview } from '../components/previews/MvpPreview';
 import { BlueprintPreview } from '../components/previews/BlueprintPreview';
 import { TasksPreview } from '../components/previews/TasksPreview';
-import { AdminPortalPreview } from '../components/previews/AdminPortalPreview';
 
 const TABS = [
-  { id: 'public-ideas', label: 'Public Ideas', icon: Globe, component: PublicIdeasPreview },
   { id: 'workspace', label: 'Workspace Hub', icon: Briefcase, component: WorkspacePreview },
   { id: 'mvp', label: 'MVP Selection', icon: Trophy, component: MvpPreview },
   { id: 'blueprint', label: 'AI Blueprint', icon: Zap, component: BlueprintPreview },
   { id: 'tasks', label: 'Tasks Board', icon: CheckSquare, component: TasksPreview },
-  { id: 'admin', label: 'Admin Portal', icon: ShieldCheck, component: AdminPortalPreview },
 ];
 
 export function InteractiveProductPreview() {
-  const [activeTabId, setActiveTabId] = useState('public-ideas');
+  const [activeTabId, setActiveTabId] = useState('workspace');
 
   const activeTab = TABS.find((t) => t.id === activeTabId) || TABS[0];
   const ActiveComponent = activeTab.component;
 
   return (
-    <section className="py-24 bg-slate-950 border-b border-slate-800/80 relative overflow-hidden">
+    <section id="how-it-works" className="py-24 bg-slate-950 border-b border-slate-800/80 relative overflow-hidden">
       {/* Background Glow */}
       <div className="absolute top-1/3 right-1/4 h-96 w-96 rounded-full bg-purple-600/10 blur-3xl pointer-events-none" />
 

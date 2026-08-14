@@ -200,14 +200,34 @@ export const blueprintService = {
    * Real-time subscription to all generated blueprint versions for an MVP.
    */
   subscribeToBlueprintVersions: (orgId, mvpIdeaId, callback) => {
-    if (!orgId || !mvpIdeaId) {
+    if (!orgId) {
       callback([]);
       return () => {};
     }
-    return rtdbService.subscribe(`blueprints/${orgId}/${mvpIdeaId}/versions`, (versionsObj) => {
-      const list = Object.values(versionsObj || {}).filter((v) => v && (v.status === 'completed' || v.version));
+
+    const parseList = (versionsObj) => {
+      if (!versionsObj || typeof versionsObj !== 'object') return [];
+      const list = Object.values(versionsObj).filter((v) => v && typeof v === 'object' && (v.status === 'completed' || v.version));
       list.sort((a, b) => (parseFloat(b.version) || 0) - (parseFloat(a.version) || 0));
-      callback(list);
+      return list;
+    };
+
+    if (mvpIdeaId) {
+      return rtdbService.subscribe(`blueprints/${orgId}/${mvpIdeaId}/versions`, (versionsObj) => {
+        const list = parseList(versionsObj);
+        if (list.length > 0) {
+          callback(list);
+        } else {
+          // Fallback to workspace root versions path
+          rtdbService.getData(`blueprints/${orgId}/versions`).then((rootVersionsObj) => {
+            callback(parseList(rootVersionsObj));
+          });
+        }
+      });
+    }
+
+    return rtdbService.subscribe(`blueprints/${orgId}/versions`, (rootVersionsObj) => {
+      callback(parseList(rootVersionsObj));
     });
   },
 };

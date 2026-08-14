@@ -56,7 +56,7 @@ export function LivePublicIdeasFeed() {
   const [selectedIdea, setSelectedIdea] = useState(null);
 
   useEffect(() => {
-    // Realtime subscription to Firebase Realtime Database node "publicIdeas"
+    // Realtime subscription to Firebase Realtime Database node "publicIdeas" (Strict Zero-Fake-Data)
     const unsubscribe = rtdbService.subscribe('publicIdeas', (data) => {
       if (data && typeof data === 'object') {
         const parsed = Object.entries(data)
@@ -66,17 +66,11 @@ export function LivePublicIdeasFeed() {
           }))
           .filter((item) => item && !item.isDeleted);
 
-        if (parsed.length > 0) {
-          // Sort newest first
-          parsed.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-          setIdeas(parsed);
-          setLoading(false);
-          return;
-        }
+        parsed.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        setIdeas(parsed);
+      } else {
+        setIdeas([]);
       }
-
-      // Fallback to rich demo data if Firebase table is empty
-      setIdeas(DEMO_FALLBACK_IDEAS);
       setLoading(false);
     });
 
@@ -119,6 +113,14 @@ export function LivePublicIdeasFeed() {
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-64 rounded-3xl bg-slate-900/60 animate-pulse border border-slate-800" />
             ))}
+          </div>
+        ) : ideas.length === 0 ? (
+          <div className="p-12 text-center rounded-3xl bg-slate-900/60 border border-slate-800/80 space-y-3 max-w-xl mx-auto">
+            <Globe className="h-8 w-8 text-purple-400 mx-auto" />
+            <h3 className="text-lg font-bold text-white">No Public Proposals Shared Yet</h3>
+            <p className="text-xs text-slate-400 font-medium">
+              Be the first innovator to share a public proposal with the global community!
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

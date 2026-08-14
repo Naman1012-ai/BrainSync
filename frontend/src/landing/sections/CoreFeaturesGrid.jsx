@@ -23,18 +23,16 @@ const ALL_FEATURES = [
   { title: 'MVP Selection', icon: Trophy, desc: 'Workspace lead locks the winning proposal as the official project MVP.', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
   { title: 'AI Blueprint Generation', icon: Zap, desc: 'Instantly generate technical PRDs, architecture specs, database schemas, and REST endpoints.', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
   { title: 'Task Management', icon: CheckSquare, desc: 'Auto-populated Kanban board assigns frontend, backend, and integration task cards to teammates.', color: 'text-rose-400 bg-rose-500/10 border-rose-500/20' },
-  { title: 'Realtime Collaboration', icon: Users, desc: 'Sub-second synchronization across all workspace members via Firebase RTDB.', color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
+  { title: 'Realtime Collaboration', icon: Users, desc: 'Instant real-time state synchronization across all workspace team members.', color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
   { title: 'Workspace Management', icon: Briefcase, desc: 'Join via code, manage team rosters, enforce member limits, and configure settings.', color: 'text-sky-400 bg-sky-500/10 border-sky-500/20' },
-  { title: 'Public Innovation Feed', icon: Globe, desc: 'Explore global public ideas, upvote concepts, or import proposals directly into your workspace.', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
-  { title: 'Admin Portal', icon: ShieldCheck, desc: 'Enterprise administration, telemetry monitoring, user governance, and security audit logs.', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-  { title: 'Announcement System', icon: Megaphone, desc: 'Broadcast global alerts, hackathon updates, and platform notices with per-user dismissal.', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-  { title: 'Feature Flags & Controls', icon: Sliders, desc: 'Dynamic feature toggles and platform limits enforced at both UI and service levels.', color: 'text-rose-400 bg-rose-500/10 border-rose-500/20' },
+  { title: 'Announcement System', icon: Megaphone, desc: 'Broadcast team alerts, platform notices, and system updates with per-user dismissal.', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+  { title: 'Feature Flags & Controls', icon: Sliders, desc: 'Dynamic feature toggles and platform limits enforced across workspace modules.', color: 'text-rose-400 bg-rose-500/10 border-rose-500/20' },
   { title: 'Notification Center', icon: Bell, desc: 'Real-time notifications for upvotes, comments, MVP selection, and assignment updates.', color: 'text-sky-400 bg-sky-500/10 border-sky-500/20' },
 ];
 
 export function CoreFeaturesGrid() {
   return (
-    <section className="py-24 bg-slate-950/90 border-b border-slate-800/80 relative overflow-hidden">
+    <section id="features" className="py-24 bg-slate-950/90 border-b border-slate-800/80 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-purple-500/30 text-purple-300 text-xs font-mono font-bold">

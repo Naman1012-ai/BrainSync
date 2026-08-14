@@ -126,10 +126,17 @@ ${JSON.stringify(contextPayload.questions || [], null, 2)}
 </project_context>
 `;
 
-    const userPrompt = `Generate the structured 16-section Technical Blueprint JSON for the MVP project described inside <project_context>. Remember to output ONLY valid JSON.`;
+    const isRegen = Boolean(contextPayload.isRegeneration || (contextPayload.nextVersion && contextPayload.nextVersion !== '1.0'));
+    const nextVerStr = contextPayload.nextVersion || '1.0';
+
+    const userPrompt = `Generate the structured 16-section Technical Blueprint JSON for the MVP project described inside <project_context>. ${
+      isRegen
+        ? `[REGENERATION / VERSION v${nextVerStr} INSTRUCTION]: This is a new regenerated version of the technical blueprint for this idea. Provide a distinct, alternative technical perspective with fresh architectural choices, alternative or enhanced tech stack recommendations, refined user flow steps, and expanded database schema fields, while remaining 100% laser-focused on the core problem statement, proposed solution, and idea details inside <project_context>.`
+        : ''
+    } Remember to output ONLY valid JSON.`;
 
     try {
-      console.log(`🤖 [geminiService] Calling Gemini API (Model: ${modelName}) with 45s hard timeout...`);
+      console.log(`🤖 [geminiService] Calling Gemini API (Model: ${modelName} | Version: v${nextVerStr} | Temp: ${isRegen ? 0.8 : 0.2}) with 45s hard timeout...`);
 
       const geminiPromise = ai.models.generateContent({
         model: modelName,
@@ -139,8 +146,8 @@ ${JSON.stringify(contextPayload.questions || [], null, 2)}
         config: {
           systemInstruction: systemInstruction,
           responseMimeType: 'application/json',
-          temperature: 0.2,
-          topP: 0.8,
+          temperature: isRegen ? 0.8 : 0.2,
+          topP: 0.95,
         },
       });
 

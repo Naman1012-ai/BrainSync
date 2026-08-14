@@ -33,20 +33,25 @@ export const blueprintController = {
       throw new Error('Workspace ID and User UID are required.');
     }
 
-    const memberRecord = await rtdbService.getData(`organization_members/${workspaceId}/${userUid}`);
-    const org = await rtdbService.getData(`organizations/${workspaceId}`);
+    const memberRecord = (await rtdbService.getData(`organization_members/${workspaceId}/${userUid}`)) ||
+                         (await rtdbService.getData(`workspace_members/${workspaceId}/${userUid}`));
+    const org = (await rtdbService.getData(`organizations/${workspaceId}`)) ||
+                (await rtdbService.getData(`workspaces/${workspaceId}`));
 
     if (!org) {
       throw new Error('Workspace does not exist.');
     }
-    if (!memberRecord && org.ownerId !== userUid) {
+    const isOwner = org.ownerId === userUid || org.createdBy === userUid || org.ownerUid === userUid;
+    const isMember = Boolean(memberRecord || isOwner || (org.members && org.members[userUid]));
+
+    if (!isMember) {
       throw new Error('Unauthorized. You must be a member of this workspace to recover a Blueprint.');
     }
 
-    let activeMvpId = org.activeProjectId;
+    let activeMvpId = org.activeProjectId || org.selectedIdeaId || org.activeMvpId;
     if (!activeMvpId) {
       const meta = await rtdbService.getData(`workspaces/${workspaceId}/metadata`);
-      activeMvpId = meta?.selectedIdeaId;
+      activeMvpId = meta?.selectedIdeaId || meta?.activeMvpId;
     }
 
     if (!activeMvpId) return { recovered: false, reason: 'No active MVP' };
@@ -100,33 +105,60 @@ export const blueprintController = {
 
     console.log(`🚀 [Blueprint Generation Started] Workspace: ${workspaceId} | Triggered By User: ${userUid}`);
 
-    // 1. Verify User Membership in Workspace (403 Forbidden check)
-    const memberRecord = await rtdbService.getData(`organization_members/${workspaceId}/${userUid}`);
-    const org = await rtdbService.getData(`organizations/${workspaceId}`);
+    // Helper for retry/polling lookup to handle initial Firebase write latency
+    const fetchOrgWithRetry = async (id, maxRetries = 3, delayMs = 500) => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        console.log(`🔍 [Workspace Lookup] Querying RTDB paths 'organizations/${id}' & 'workspaces/${id}' (Attempt ${attempt}/${maxRetries})`);
+        
+        const orgData = (await rtdbService.getData(`organizations/${id}`)) ||
+                        (await rtdbService.getData(`workspaces/${id}`));
+        
+        if (orgData) {
+          console.log(`✅ [Workspace Found] Successfully resolved workspace snapshot for '${id}' on attempt ${attempt}`);
+          return orgData;
+        }
+
+        if (attempt < maxRetries) {
+          console.warn(`⏳ [Workspace Write Latency] Workspace '${id}' not found yet on attempt ${attempt}. Retrying in ${delayMs}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+      }
+      return null;
+    };
+
+    // 1. Verify User Membership in Workspace (with 3-attempt polling retry)
+    const org = await fetchOrgWithRetry(workspaceId);
 
     if (!org) {
-      console.warn(`❌ [Blueprint Generation Failed] Workspace ${workspaceId} not found (404)`);
-      throw new Error('Workspace does not exist.');
+      console.warn(`❌ [Blueprint Generation Failed] Workspace '${workspaceId}' not found after 3 retries across paths: 'organizations/${workspaceId}' and 'workspaces/${workspaceId}' (404)`);
+      throw new Error(`Workspace '${workspaceId}' does not exist or has not synchronized yet.`);
     }
-    if (!memberRecord && org.ownerId !== userUid) {
+
+    const memberRecord = (await rtdbService.getData(`organization_members/${workspaceId}/${userUid}`)) ||
+                         (await rtdbService.getData(`workspace_members/${workspaceId}/${userUid}`));
+
+    const isOwner = org.ownerId === userUid || org.createdBy === userUid || org.ownerUid === userUid;
+    const isMember = Boolean(memberRecord || isOwner || (org.members && org.members[userUid]));
+
+    if (!isMember) {
       console.warn(`❌ [Blueprint Generation Denied] User ${userUid} is not a member of workspace ${workspaceId} (403)`);
       throw new Error('Unauthorized. You must be a member of this workspace to generate a Blueprint.');
     }
 
     // 2. Resolve Source of Truth Active MVP Idea from RTDB
-    let activeMvpId = org.activeProjectId;
+    let activeMvpId = org.activeProjectId || org.selectedIdeaId || org.activeMvpId;
     if (!activeMvpId) {
       const meta = await rtdbService.getData(`workspaces/${workspaceId}/metadata`);
-      activeMvpId = meta?.selectedIdeaId;
+      activeMvpId = meta?.selectedIdeaId || meta?.activeMvpId;
     }
 
     if (!activeMvpId) {
       const ideasObj = (await rtdbService.getData(`ideas/${workspaceId}`)) || {};
       const selectedIdea = Object.values(ideasObj).find(
-        (i) => i && !i.isDeleted && (i.isSelected || i.status === 'selected' || i.status === 'Selected MVP')
+        (i) => i && !i.isDeleted && (i.isSelected || i.status === 'selected' || i.status === 'Selected MVP' || i.projectStatus === 'Selected MVP')
       );
       if (selectedIdea) {
-        activeMvpId = selectedIdea.ideaId;
+        activeMvpId = selectedIdea.ideaId || selectedIdea.id;
       }
     }
 
@@ -135,7 +167,12 @@ export const blueprintController = {
       throw new Error('No MVP selected for this workspace. Please select an idea as MVP on the Idea Board.');
     }
 
-    const mvpIdea = await rtdbService.getData(`ideas/${workspaceId}/${activeMvpId}`);
+    let mvpIdea = await rtdbService.getData(`ideas/${workspaceId}/${activeMvpId}`);
+    if (!mvpIdea) {
+      const ideasObj = (await rtdbService.getData(`ideas/${workspaceId}`)) || {};
+      mvpIdea = ideasObj[activeMvpId] || Object.values(ideasObj).find((i) => i && (i.ideaId === activeMvpId || i.id === activeMvpId));
+    }
+
     if (!mvpIdea || mvpIdea.isDeleted) {
       console.warn(`❌ [Blueprint Generation Stopped] Selected MVP ${activeMvpId} missing or deleted in workspace ${workspaceId}`);
       throw new Error('The selected MVP idea could not be found or has been deleted.');
@@ -146,19 +183,31 @@ export const blueprintController = {
     const existingBp = (await rtdbService.getData(`blueprints/${workspaceId}/${activeMvpId}`)) || 
                        (await rtdbService.getData(`blueprints/${workspaceId}`));
 
+    const rawVersions = (await rtdbService.getData(`blueprints/${workspaceId}/${activeMvpId}/versions`)) ||
+                        (await rtdbService.getData(`blueprints/${workspaceId}/versions`)) ||
+                        existingBp?.versions ||
+                        {};
+
+    const versionNumbers = [];
+    if (existingBp?.version) {
+      const v = parseFloat(existingBp.version);
+      if (!isNaN(v)) versionNumbers.push(v);
+    }
+    Object.keys(rawVersions || {}).forEach((k) => {
+      const verStr = rawVersions[k]?.version || k.replace(/^v/, '').replace(/_/g, '.');
+      const v = parseFloat(verStr);
+      if (!isNaN(v)) versionNumbers.push(v);
+    });
+
+    const maxVersion = versionNumbers.length > 0 ? Math.max(...versionNumbers) : 0;
+    const nextVersion = maxVersion > 0 ? (maxVersion + 1.0).toFixed(1) : '1.0';
+    const isRegeneration = maxVersion >= 1.0;
+
     if (existingBp?.status === 'generating') {
       const isStaleLock = Date.now() - (existingBp.updatedAt || existingBp.generationStartedAt || 0) > 90000;
       if (!isStaleLock) {
         console.warn(`🔒 [Duplicate Generation Prevented] Generation already in progress for workspace ${workspaceId}`);
         throw new Error('Blueprint generation is already in progress for this workspace.');
-      }
-    }
-
-    let nextVersion = '1.0';
-    if (existingBp && existingBp.status === 'completed' && existingBp.version) {
-      const parsedVer = parseFloat(existingBp.version);
-      if (!isNaN(parsedVer) && parsedVer >= 1.0) {
-        nextVersion = (parsedVer + 1.0).toFixed(1);
       }
     }
 
@@ -182,10 +231,15 @@ export const blueprintController = {
 
     try {
       const aiInputPayload = await aiBlueprintService.prepareAiInputContext(workspaceId, mvpIdea);
-      console.log(`🤖 [AI Generation Requested] Model: ${process.env.GEMINI_MODEL || 'gemini-2.0-flash'} | Workspace: ${workspaceId}`);
+      aiInputPayload.isRegeneration = isRegeneration;
+      aiInputPayload.nextVersion = nextVersion;
+
+      console.log(`🤖 [AI Generation Requested] Model: ${process.env.GEMINI_MODEL || 'gemini-2.0-flash'} | Version: ${nextVersion} (Regeneration: ${isRegeneration}) | Workspace: ${workspaceId}`);
 
       const geminiResult = await geminiService.generateBlueprintFromContext(aiInputPayload);
-      console.log(`✨ [AI Response Received & Schema Validated] 16 Sections confirmed for workspace ${workspaceId}`);
+      console.log(`✨ [AI Response Received & Schema Validated] 16 Sections confirmed for workspace ${workspaceId} (v${nextVersion})`);
+
+      const versionKey = `v${nextVersion.replace(/\./g, '_')}`;
 
       const completeBlueprintDocument = {
         blueprintId: `bp_${workspaceId}_${activeMvpId}`,
@@ -193,6 +247,8 @@ export const blueprintController = {
         orgId: workspaceId,
         mvpIdeaId: activeMvpId,
         ideaId: activeMvpId,
+        activeVersionId: nextVersion,
+        activeVersionKey: versionKey,
         version: nextVersion,
         status: 'completed',
         lastModifiedSource: 'ai_generation',
@@ -230,18 +286,15 @@ export const blueprintController = {
 
       console.log(`💾 [Blueprint Persistence Started] Saving Version ${nextVersion} to RTDB version history...`);
 
-      const existingVersions = (await rtdbService.getData(`blueprints/${workspaceId}/${activeMvpId}/versions`)) || 
-                             existingBp?.versions || 
-                             {};
+      const existingVersions = { ...rawVersions };
 
-      if (existingBp && existingBp.status === 'completed' && existingBp.version && existingBp.content) {
+      if (existingBp && existingBp.version && existingBp.content) {
         const prevVersionKey = `v${String(existingBp.version).replace(/\./g, '_')}`;
         const prevSnapshot = { ...existingBp };
         delete prevSnapshot.versions;
         existingVersions[prevVersionKey] = prevSnapshot;
       }
 
-      const versionKey = `v${nextVersion.replace(/\./g, '_')}`;
       const newSnapshot = { ...completeBlueprintDocument };
       delete newSnapshot.versions;
       existingVersions[versionKey] = newSnapshot;
@@ -253,6 +306,11 @@ export const blueprintController = {
         rtdbService.setData(`blueprints/${workspaceId}/current`, completeBlueprintDocument),
         rtdbService.setData(`blueprints/${workspaceId}`, completeBlueprintDocument),
       ];
+
+      for (const [vKey, vSnap] of Object.entries(existingVersions)) {
+        savePromises.push(rtdbService.setData(`blueprints/${workspaceId}/${activeMvpId}/versions/${vKey}`, vSnap));
+        savePromises.push(rtdbService.setData(`blueprints/${workspaceId}/versions/${vKey}`, vSnap));
+      }
 
       await Promise.all(savePromises);
 

@@ -241,14 +241,25 @@ export default function BlueprintPage() {
     return () => unsubVersions();
   }, [orgId, activeMvpId]);
 
+  // Merged versions array (real-time versions + embedded blueprint.versions fallback)
+  const effectiveBlueprintVersions = React.useMemo(() => {
+    if (blueprintVersions && blueprintVersions.length > 0) return blueprintVersions;
+    if (blueprint && blueprint.versions && typeof blueprint.versions === 'object') {
+      const list = Object.values(blueprint.versions).filter((v) => v && typeof v === 'object' && (v.status === 'completed' || v.version));
+      list.sort((a, b) => (parseFloat(b.version) || 0) - (parseFloat(a.version) || 0));
+      return list;
+    }
+    return [];
+  }, [blueprintVersions, blueprint]);
+
   // Resolved active/displayed blueprint (supports switching to historical versions)
   const displayedBlueprint = React.useMemo(() => {
-    if (selectedVersionKey && blueprintVersions.length > 0) {
-      const matched = blueprintVersions.find((v) => v.version === selectedVersionKey);
+    if (selectedVersionKey && effectiveBlueprintVersions.length > 0) {
+      const matched = effectiveBlueprintVersions.find((v) => String(v.version) === String(selectedVersionKey));
       if (matched) return matched;
     }
     return blueprint;
-  }, [selectedVersionKey, blueprintVersions, blueprint]);
+  }, [selectedVersionKey, effectiveBlueprintVersions, blueprint]);
 
   // Stage Cycle Timer during Generation
   useEffect(() => {
@@ -474,8 +485,8 @@ export default function BlueprintPage() {
       )}
 
       {/* Hero MVP Header Card */}
-      <Card className="bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 text-white p-8 shadow-2xl border border-indigo-800/60 relative overflow-hidden">
-        <div className="absolute top-0 right-0 h-48 w-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+      <Card className="bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 text-white p-8 shadow-2xl border border-indigo-800/60 relative">
+        <div className="absolute top-0 right-0 h-48 w-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none overflow-hidden" />
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-3">
@@ -491,7 +502,7 @@ export default function BlueprintPage() {
               </Badge>
 
               {/* Version Selector Dropdown for History */}
-              {blueprintVersions.length > 0 ? (
+              {effectiveBlueprintVersions.length > 0 ? (
                 <div className="flex items-center gap-1.5 bg-slate-900/90 border border-indigo-500/40 px-2.5 py-0.5 rounded-lg shadow-inner">
                   <History className="h-3.5 w-3.5 text-indigo-400" />
                   <span className="text-[11px] font-mono font-bold text-slate-300">Version:</span>
@@ -507,9 +518,9 @@ export default function BlueprintPage() {
                     }}
                     className="bg-slate-950 text-emerald-300 text-xs font-bold font-mono px-2 py-0.5 rounded border border-emerald-500/40 focus:outline-none cursor-pointer"
                   >
-                    {blueprintVersions.map((v) => (
+                    {effectiveBlueprintVersions.map((v) => (
                       <option key={v.version} value={v.version}>
-                        v{v.version} {v.version === blueprint?.version ? '(Latest)' : `(${formatTimestamp(v.generatedAt || v.updatedAt)})`}
+                        Version {v.version} - {formatTimestamp(v.generatedAt || v.updatedAt)}{v.version === blueprint?.version ? ' (Latest)' : ''}
                       </option>
                     ))}
                   </select>
@@ -564,26 +575,43 @@ export default function BlueprintPage() {
                     onClick={() => setShowExportMenu((prev) => !prev)}
                     isLoading={isExportingJson || isExportingPdf}
                     disabled={isGenerating || isSaving}
-                    className="bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border-indigo-800 font-bold text-xs"
+                    className="bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border-indigo-800 font-bold text-xs active:scale-95 transition-transform"
                   >
                     Export ▾
                   </Button>
 
                   {showExportMenu && (
-                    <div className="absolute right-0 mt-2 w-48 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl z-50 py-1 space-y-1">
-                      <button
-                        onClick={handleExportPdf}
-                        className="w-full text-left px-4 py-2.5 text-xs text-slate-200 hover:bg-purple-950/60 hover:text-white flex items-center gap-2 font-bold transition-colors"
-                      >
-                        <FileType className="h-4 w-4 text-rose-400" /> Export Professional PDF
-                      </button>
-                      <button
-                        onClick={handleExportJson}
-                        className="w-full text-left px-4 py-2.5 text-xs text-slate-200 hover:bg-purple-950/60 hover:text-white flex items-center gap-2 font-bold transition-colors"
-                      >
-                        <FileCode className="h-4 w-4 text-cyan-400" /> Export Structured JSON
-                      </button>
-                    </div>
+                    <>
+                      {/* Mobile Backdrop overlay to close menu when tapping outside */}
+                      <div
+                        className="fixed inset-0 z-40 bg-black/20 sm:bg-transparent"
+                        onClick={() => setShowExportMenu(false)}
+                        onTouchStart={() => setShowExportMenu(false)}
+                      />
+
+                      <div className="absolute right-0 mt-2 w-52 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl z-50 py-1.5 space-y-1 divide-y divide-slate-800/80">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleExportPdf();
+                          }}
+                          className="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-purple-950/80 active:bg-purple-900 hover:text-white flex items-center gap-2.5 font-bold transition-colors touch-manipulation"
+                        >
+                          <FileType className="h-4 w-4 text-rose-400 shrink-0" /> Export Professional PDF
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleExportJson();
+                          }}
+                          className="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-purple-950/80 active:bg-purple-900 hover:text-white flex items-center gap-2.5 font-bold transition-colors touch-manipulation"
+                        >
+                          <FileCode className="h-4 w-4 text-cyan-400 shrink-0" /> Export Structured JSON
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
 

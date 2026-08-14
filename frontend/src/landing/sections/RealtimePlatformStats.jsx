@@ -4,50 +4,183 @@ import { Users, Briefcase, Globe, ThumbsUp, MessageSquare, CheckSquare, Zap, Meg
 
 export function RealtimePlatformStats() {
   const [counts, setCounts] = useState({
-    users: 1420,
-    workspaces: 380,
-    publicIdeas: 340,
-    votes: 4920,
-    comments: 1890,
-    tasks: 2450,
-    blueprints: 310,
-    announcements: 45,
+    users: 0,
+    workspaces: 0,
+    proposals: 0,
+    votes: 0,
+    comments: 0,
+    tasks: 0,
+    blueprints: 0,
+    announcements: 0,
   });
 
   useEffect(() => {
-    // Realtime listeners across Firebase RTDB nodes
+    let orgsMap = {};
+    let wsMap = {};
+    let ideasMap = {};
+    let publicIdeasMap = {};
+    let votesMap = {};
+    let discussionsMap = {};
+    let tasksMap = {};
+    let blueprintsMap = {};
+
+    const updateStats = () => {
+      // 1. Unique Workspaces count
+      const allWsIds = new Set();
+      Object.entries(orgsMap || {}).forEach(([id, val]) => {
+        if (val && !val.isDeleted) allWsIds.add(id);
+      });
+      Object.entries(wsMap || {}).forEach(([id, val]) => {
+        if (val && !val.isDeleted) allWsIds.add(id);
+      });
+
+      // 2. Proposals count (workspace ideas + public ideas)
+      let proposalCount = 0;
+      let calculatedVotes = 0;
+
+      Object.values(ideasMap || {}).forEach((wsIdeas) => {
+        if (wsIdeas && typeof wsIdeas === 'object') {
+          Object.values(wsIdeas).forEach((idea) => {
+            if (idea && !idea.isDeleted) {
+              proposalCount++;
+              if (idea.voteCount) calculatedVotes += idea.voteCount;
+              else if (idea.upvotedBy && typeof idea.upvotedBy === 'object') {
+                calculatedVotes += Object.keys(idea.upvotedBy).length;
+              }
+            }
+          });
+        }
+      });
+
+      Object.values(publicIdeasMap || {}).forEach((idea) => {
+        if (idea && !idea.isDeleted) {
+          proposalCount++;
+          if (idea.voteCount) calculatedVotes += idea.voteCount;
+        }
+      });
+
+      // 3. Direct Votes node count
+      let directVotesCount = 0;
+      Object.values(votesMap || {}).forEach((item) => {
+        if (item && typeof item === 'object') {
+          directVotesCount += Object.keys(item).length;
+        } else if (item) {
+          directVotesCount++;
+        }
+      });
+      const totalVotes = Math.max(calculatedVotes, directVotesCount);
+
+      // 4. Comments count
+      let commentsCount = 0;
+      Object.values(discussionsMap || {}).forEach((itemMap) => {
+        if (itemMap && typeof itemMap === 'object') {
+          commentsCount += Object.keys(itemMap).length;
+        }
+      });
+
+      // 5. Tasks count
+      let tasksCount = 0;
+      Object.values(tasksMap || {}).forEach((wsTasks) => {
+        if (wsTasks && typeof wsTasks === 'object') {
+          Object.values(wsTasks).forEach((t) => {
+            if (t && !t.isDeleted) tasksCount++;
+          });
+        }
+      });
+
+      // 6. Blueprints count
+      let blueprintsCount = 0;
+      Object.values(blueprintsMap || {}).forEach((wsBp) => {
+        if (wsBp && typeof wsBp === 'object') {
+          Object.values(wsBp).forEach((bp) => {
+            if (bp && typeof bp === 'object' && (bp.blueprintId || bp.status || bp.content || bp.ideaTitle || bp.version)) {
+              blueprintsCount++;
+            }
+          });
+        }
+      });
+
+      setCounts({
+        users: counts.users,
+        workspaces: allWsIds.size,
+        proposals: proposalCount,
+        votes: totalVotes,
+        comments: commentsCount,
+        tasks: tasksCount,
+        blueprints: blueprintsCount,
+        announcements: counts.announcements,
+      });
+    };
+
+    // Subscriptions
     const unsubUsers = rtdbService.subscribe('users', (data) => {
-      if (data && typeof data === 'object') {
-        const len = Object.keys(data).length;
-        if (len > 0) setCounts((prev) => ({ ...prev, users: len }));
-      }
+      const len = data && typeof data === 'object' ? Object.keys(data).length : 0;
+      setCounts((prev) => ({ ...prev, users: len }));
     });
 
     const unsubOrgs = rtdbService.subscribe('organizations', (data) => {
-      if (data && typeof data === 'object') {
-        const len = Object.values(data).filter((o) => o && !o.isDeleted).length;
-        if (len > 0) setCounts((prev) => ({ ...prev, workspaces: len }));
-      }
+      orgsMap = data || {};
+      updateStats();
     });
 
-    const unsubIdeas = rtdbService.subscribe('publicIdeas', (data) => {
-      if (data && typeof data === 'object') {
-        const len = Object.values(data).filter((i) => i && !i.isDeleted).length;
-        if (len > 0) setCounts((prev) => ({ ...prev, publicIdeas: len }));
-      }
+    const unsubWs = rtdbService.subscribe('workspaces', (data) => {
+      wsMap = data || {};
+      updateStats();
+    });
+
+    const unsubIdeas = rtdbService.subscribe('ideas', (data) => {
+      ideasMap = data || {};
+      updateStats();
+    });
+
+    const unsubPublicIdeas = rtdbService.subscribe('publicIdeas', (data) => {
+      publicIdeasMap = data || {};
+      updateStats();
+    });
+
+    const unsubVotes = rtdbService.subscribe('votes', (data) => {
+      votesMap = data || {};
+      updateStats();
+    });
+
+    const unsubDiscussions = rtdbService.subscribe('discussions', (data) => {
+      discussionsMap = data || {};
+      updateStats();
+    });
+
+    const unsubTasks = rtdbService.subscribe('tasks', (data) => {
+      tasksMap = data || {};
+      updateStats();
+    });
+
+    const unsubBlueprints = rtdbService.subscribe('blueprints', (data) => {
+      blueprintsMap = data || {};
+      updateStats();
+    });
+
+    const unsubAnnouncements = rtdbService.subscribe('announcements', (data) => {
+      const len = data && typeof data === 'object' ? Object.keys(data).length : 0;
+      setCounts((prev) => ({ ...prev, announcements: len }));
     });
 
     return () => {
       if (typeof unsubUsers === 'function') unsubUsers();
       if (typeof unsubOrgs === 'function') unsubOrgs();
+      if (typeof unsubWs === 'function') unsubWs();
       if (typeof unsubIdeas === 'function') unsubIdeas();
+      if (typeof unsubPublicIdeas === 'function') unsubPublicIdeas();
+      if (typeof unsubVotes === 'function') unsubVotes();
+      if (typeof unsubDiscussions === 'function') unsubDiscussions();
+      if (typeof unsubTasks === 'function') unsubTasks();
+      if (typeof unsubBlueprints === 'function') unsubBlueprints();
+      if (typeof unsubAnnouncements === 'function') unsubAnnouncements();
     };
   }, []);
 
   const STATS_ITEMS = [
-    { label: 'Registered Users', val: counts.users, icon: Users, color: 'text-indigo-400' },
+    { label: 'Active Users', val: counts.users, icon: Users, color: 'text-indigo-400' },
     { label: 'Workspaces', val: counts.workspaces, icon: Briefcase, color: 'text-purple-400' },
-    { label: 'Public Ideas', val: counts.publicIdeas, icon: Globe, color: 'text-sky-400' },
+    { label: 'Proposals', val: counts.proposals, icon: Globe, color: 'text-sky-400' },
     { label: 'Upvotes Cast', val: counts.votes, icon: ThumbsUp, color: 'text-emerald-400' },
     { label: 'Comments', val: counts.comments, icon: MessageSquare, color: 'text-amber-400' },
     { label: 'Tasks Created', val: counts.tasks, icon: CheckSquare, color: 'text-rose-400' },
@@ -56,11 +189,11 @@ export function RealtimePlatformStats() {
   ];
 
   return (
-    <section className="py-24 bg-slate-950 border-b border-slate-800/80 relative">
+    <section id="stats" className="py-24 bg-slate-950 border-b border-slate-800/80 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <span className="px-3 py-1 rounded-full bg-slate-900 border border-purple-500/30 text-purple-300 text-xs font-mono font-bold">
-            Live Telemetry Metrics
+            Live Platform Telemetry
           </span>
 
           <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
@@ -68,7 +201,7 @@ export function RealtimePlatformStats() {
           </h2>
 
           <p className="text-base text-slate-400 font-medium">
-            Live telemetry data synchronized directly from Firebase Realtime Database.
+            Live platform activity telemetry metrics.
           </p>
         </div>
 
@@ -78,15 +211,17 @@ export function RealtimePlatformStats() {
             return (
               <div
                 key={item.label}
-                className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 text-center space-y-2 hover:border-purple-500/40 transition-all duration-300 group"
+                className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col items-center justify-center text-center space-y-3 shadow-xl hover:border-purple-500/40 transition-all"
               >
-                <div className={`p-2 rounded-xl bg-slate-950 border border-slate-800 w-fit mx-auto ${item.color}`}>
-                  <IconComp className="h-4 w-4" />
+                <div className={`p-2.5 rounded-xl bg-slate-950 border border-slate-800 ${item.color}`}>
+                  <IconComp className="h-5 w-5" />
                 </div>
-                <p className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                  {item.val.toLocaleString()}
-                </p>
-                <p className="text-[10px] font-mono text-slate-400 font-semibold">{item.label}</p>
+                <div className="text-2xl sm:text-3xl font-black text-white tracking-tight font-mono">
+                  {item.val}
+                </div>
+                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  {item.label}
+                </div>
               </div>
             );
           })}

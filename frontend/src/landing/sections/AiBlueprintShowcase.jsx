@@ -3,7 +3,7 @@ import { Zap, Code2, Database, Layers, Cpu, CheckCircle2, Sparkles } from 'lucid
 
 export function AiBlueprintShowcase() {
   return (
-    <section className="py-24 bg-slate-950 border-b border-slate-800/80 relative overflow-hidden">
+    <section id="ai-blueprint" className="py-24 bg-slate-950 border-b border-slate-800/80 relative overflow-hidden">
       {/* Glow Effects */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[34rem] w-[34rem] rounded-full bg-purple-600/10 blur-3xl pointer-events-none" />
 

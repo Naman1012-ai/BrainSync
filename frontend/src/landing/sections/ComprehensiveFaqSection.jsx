@@ -4,31 +4,27 @@ import { ChevronDown, HelpCircle, Sparkles } from 'lucide-react';
 const COMPREHENSIVE_FAQS = [
   {
     q: 'What is BrainSync?',
-    a: 'BrainSync is a real-time collaborative ideation platform designed specifically for hackathon teams and builder groups to move from scattered brainstorms to a selected MVP proposal and AI technical blueprint in minutes.',
+    a: 'BrainSync is a real-time collaborative innovation platform that helps startup founders, product teams, open-source communities, and developers move from scattered ideas to a structured MVP proposal and a 16-section AI technical blueprint in minutes.',
   },
   {
-    q: 'How is BrainSync different from Discord?',
-    a: 'Discord is best for real-time team chat and voice calls. BrainSync is a structured decision engine—proposals, suggestions, and votes are kept in clean dedicated channels so decisions never get lost in chat streams.',
-  },
-  {
-    q: 'Can I still use Notion alongside BrainSync?',
-    a: 'Yes! BrainSync decides what deserves to be built during the critical first hour, while Notion remains excellent for long-term documentation and knowledge wikis.',
-  },
-  {
-    q: 'Can I export my projects and blueprints?',
-    a: 'Yes. All project proposals, AI technical blueprints, REST endpoints, database schemas, and Kanban task boards can be exported anytime in Markdown or JSON format.',
-  },
-  {
-    q: 'Is BrainSync free for hackathons and students?',
-    a: 'BrainSync is 100% free for hackathon participants, student teams, and open-source contributors. You can create unlimited workspaces and proposals.',
+    q: 'How is BrainSync different from Slack or Discord?',
+    a: 'Chat apps are great for messaging, but key product decisions quickly get lost in chat noise. BrainSync provides structured proposal channels, peer refinement, and weighted democratic voting so your team aligns on priorities instantly.',
   },
   {
     q: 'How does the AI Technical Blueprint Generator work?',
-    a: 'Once your workspace lead locks the winning MVP proposal, BrainSync analyzes the problem statement, proposed tech stack, and solution architecture to automatically generate system specs, database models, API endpoints, and Kanban task cards.',
+    a: 'Once your team locks the winning MVP proposal, BrainSync analyzes the problem statement, proposed tech stack, and solution architecture to automatically generate system architecture specs, database schemas, REST endpoints, team allocations, and Kanban task backlogs.',
   },
   {
-    q: 'Can my entire team collaborate in real time?',
-    a: 'Yes! BrainSync utilizes Firebase Realtime Database to deliver sub-second state synchronization across all workspace members for proposals, upvotes, and comments.',
+    q: 'Can I export my blueprints and task boards?',
+    a: 'Yes! All AI technical blueprints, database models, API endpoint documentation, and task boards can be exported anytime as validated JSON or styled PDF documents.',
+  },
+  {
+    q: 'Is BrainSync free to use?',
+    a: 'Yes, BrainSync offers free workspaces for teams, open-source contributors, student projects, and hackathon participants with full real-time collaboration features.',
+  },
+  {
+    q: 'Can my entire team collaborate simultaneously?',
+    a: 'Yes! BrainSync utilizes real-time cloud synchronization to deliver instant state updates across all workspace members for proposals, upvotes, comments, and live sprint task boards.',
   },
 ];
 
@@ -40,7 +36,7 @@ export function ComprehensiveFaqSection() {
   };
 
   return (
-    <section id="faq-comprehensive" className="py-24 bg-slate-950/95 border-b border-slate-800/80 relative">
+    <section id="faq" className="py-24 bg-slate-950/95 border-b border-slate-800/80 relative">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-purple-500/30 text-purple-300 text-xs font-mono font-bold">

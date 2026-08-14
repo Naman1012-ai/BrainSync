@@ -54,8 +54,13 @@ export const aiBlueprintService = {
     link.setAttribute('download', result.filename);
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+
+    setTimeout(() => {
+      if (document.body.contains(link)) {
+        document.body.removeChild(link);
+      }
+      URL.revokeObjectURL(url);
+    }, 1000);
 
     return result;
   },
@@ -72,7 +77,25 @@ export const aiBlueprintService = {
     const blueprintDoc = jsonResult.exportData;
 
     const { doc, filename } = generateBlueprintPdf(blueprintDoc, orgName);
-    doc.save(filename);
+
+    try {
+      doc.save(filename);
+    } catch (err) {
+      console.warn('[aiBlueprintService] standard doc.save failed, using blob fallback for mobile:', err);
+      const pdfBlob = doc.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }
 
     return {
       success: true,
