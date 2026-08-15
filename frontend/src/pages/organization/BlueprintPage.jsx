@@ -261,6 +261,22 @@ export default function BlueprintPage() {
     return blueprint;
   }, [selectedVersionKey, effectiveBlueprintVersions, blueprint]);
 
+  // Resolved latest version string
+  const latestVersion = React.useMemo(() => {
+    if (effectiveBlueprintVersions && effectiveBlueprintVersions.length > 0) {
+      return String(effectiveBlueprintVersions[0].version || '1.0');
+    }
+    return blueprint?.version ? String(blueprint.version) : '1.0';
+  }, [effectiveBlueprintVersions, blueprint]);
+
+  // Determine if user is actually viewing an older historical version
+  const isViewingHistorical = React.useMemo(() => {
+    if (!selectedVersionKey) return false;
+    if (selectedVersionKey === latestVersion) return false;
+    if (parseFloat(selectedVersionKey) === parseFloat(latestVersion)) return false;
+    return true;
+  }, [selectedVersionKey, latestVersion]);
+
   // Stage Cycle Timer during Generation
   useEffect(() => {
     if (!isGenerating) return;
@@ -311,7 +327,7 @@ export default function BlueprintPage() {
     setShowExportMenu(false);
 
     try {
-      await aiBlueprintService.exportBlueprintJson(orgId, user.uid);
+      await aiBlueprintService.exportBlueprintJson(orgId, user.uid, displayedBlueprint?.version);
       NotificationService.success('Blueprint exported successfully as JSON.');
     } catch (err) {
       console.error('[BlueprintPage] handleExportJson error:', err);
@@ -332,7 +348,7 @@ export default function BlueprintPage() {
     setShowExportMenu(false);
 
     try {
-      await aiBlueprintService.exportBlueprintPdf(orgId, user.uid, org?.name || 'Workspace');
+      await aiBlueprintService.exportBlueprintPdf(orgId, user.uid, org?.name || 'Workspace', displayedBlueprint?.version);
       NotificationService.success('Blueprint exported successfully as PDF.');
     } catch (err) {
       console.error('[BlueprintPage] handleExportPdf error:', err);
@@ -467,7 +483,7 @@ export default function BlueprintPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-20">
       {/* Historical Version Alert Banner */}
-      {selectedVersionKey && selectedVersionKey !== blueprint?.version && (
+      {isViewingHistorical && (
         <div className="p-4 bg-indigo-950/90 border border-indigo-500/50 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-indigo-200 text-xs shadow-xl animate-in fade-in duration-200">
           <div className="flex items-center gap-2.5 font-semibold">
             <History className="h-5 w-5 text-indigo-400 shrink-0" />
@@ -479,7 +495,7 @@ export default function BlueprintPage() {
             onClick={() => setSelectedVersionKey(null)}
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold border-none shrink-0"
           >
-            Switch to Latest (v{blueprint?.version})
+            Switch to Latest (v{latestVersion})
           </Button>
         </div>
       )}
@@ -507,10 +523,10 @@ export default function BlueprintPage() {
                   <History className="h-3.5 w-3.5 text-indigo-400" />
                   <span className="text-[11px] font-mono font-bold text-slate-300">Version:</span>
                   <select
-                    value={selectedVersionKey || blueprint?.version || ''}
+                    value={selectedVersionKey || latestVersion || ''}
                     onChange={(e) => {
                       const val = e.target.value;
-                      if (val === blueprint?.version) {
+                      if (val === latestVersion || parseFloat(val) === parseFloat(latestVersion)) {
                         setSelectedVersionKey(null);
                       } else {
                         setSelectedVersionKey(val);
@@ -520,7 +536,7 @@ export default function BlueprintPage() {
                   >
                     {effectiveBlueprintVersions.map((v) => (
                       <option key={v.version} value={v.version}>
-                        Version {v.version} - {formatTimestamp(v.generatedAt || v.updatedAt)}{v.version === blueprint?.version ? ' (Latest)' : ''}
+                        Version {v.version} - {formatTimestamp(v.generatedAt || v.updatedAt)}{String(v.version) === String(latestVersion) || parseFloat(v.version) === parseFloat(latestVersion) ? ' (Latest)' : ''}
                       </option>
                     ))}
                   </select>

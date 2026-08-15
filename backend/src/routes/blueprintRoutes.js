@@ -7,8 +7,12 @@ export const blueprintRouter = Router();
 function asyncRoute(fn) {
   return async (req, res, next) => {
     try {
-      const { workspaceId, userUid, updatedContent } = req.body || {};
-      const result = await fn(workspaceId || req.query.workspaceId, userUid || req.query.userUid, updatedContent);
+      const { workspaceId, userUid, updatedContent, targetVersion } = req.body || {};
+      const result = await fn(
+        workspaceId || req.query.workspaceId,
+        userUid || req.query.userUid,
+        targetVersion || updatedContent
+      );
       res.json({ success: true, data: result });
     } catch (err) {
       console.error(`🚨 [Blueprint API Error] Route: ${req.path} | Error:`, err.message);
@@ -20,5 +24,5 @@ function asyncRoute(fn) {
 blueprintRouter.post('/generate', asyncRoute((workspaceId, userUid) => blueprintController.generateBlueprintHandler(workspaceId, userUid)));
 blueprintRouter.post('/recover', asyncRoute((workspaceId, userUid) => blueprintController.recoverStaleGenerationHandler(workspaceId, userUid)));
 blueprintRouter.put('/update', asyncRoute((workspaceId, userUid, updatedContent) => blueprintController.updateBlueprintHandler(workspaceId, userUid, updatedContent)));
-blueprintRouter.post('/export-json', asyncRoute((workspaceId, userUid) => blueprintController.exportJsonHandler(workspaceId, userUid)));
+blueprintRouter.post('/export-json', asyncRoute((workspaceId, userUid, targetVersion) => blueprintController.exportJsonHandler(workspaceId, userUid, targetVersion)));
 blueprintRouter.post('/analyze-community', asyncRoute((workspaceId, userUid) => blueprintController.analyzeCommunityIntelligenceHandler(workspaceId, userUid)));

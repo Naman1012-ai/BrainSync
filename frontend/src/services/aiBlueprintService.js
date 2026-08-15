@@ -41,11 +41,11 @@ export const aiBlueprintService = {
   /**
    * Phase 6: Client-facing method to export validated Blueprint JSON.
    */
-  exportBlueprintJson: async (workspaceId, userUid) => {
+  exportBlueprintJson: async (workspaceId, userUid, targetVersion = null) => {
     if (!workspaceId || !userUid) {
       throw new Error('Workspace ID and User UID are required.');
     }
-    const result = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid });
+    const result = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid, targetVersion });
 
     const blob = new Blob([result.jsonString], { type: 'application/json;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -68,12 +68,12 @@ export const aiBlueprintService = {
   /**
    * Phase 6: Client-facing method to export validated Blueprint PDF.
    */
-  exportBlueprintPdf: async (workspaceId, userUid, orgName = 'Workspace') => {
+  exportBlueprintPdf: async (workspaceId, userUid, orgName = 'Workspace', targetVersion = null) => {
     if (!workspaceId || !userUid) {
       throw new Error('Workspace ID and User UID are required.');
     }
 
-    const jsonResult = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid });
+    const jsonResult = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid, targetVersion });
     const blueprintDoc = jsonResult.exportData;
 
     const { doc, filename } = generateBlueprintPdf(blueprintDoc, orgName);

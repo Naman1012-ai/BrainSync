@@ -436,12 +436,12 @@ export const blueprintController = {
   /**
    * Phase 6: Server Endpoint Handler for Exporting Structured Blueprint JSON.
    */
-  exportJsonHandler: async (workspaceId, userUid) => {
+  exportJsonHandler: async (workspaceId, userUid, targetVersion = null) => {
     if (!workspaceId || !userUid) {
       throw new Error('Workspace ID and User context are required for export.');
     }
 
-    console.log(`📥 [Blueprint JSON Export Requested] Workspace: ${workspaceId} | User: ${userUid}`);
+    console.log(`📥 [Blueprint JSON Export Requested] Workspace: ${workspaceId} | User: ${userUid} | Target Version: ${targetVersion || 'Latest'}`);
 
     const memberRecord = await rtdbService.getData(`organization_members/${workspaceId}/${userUid}`);
     const org = await rtdbService.getData(`organizations/${workspaceId}`);
@@ -463,49 +463,63 @@ export const blueprintController = {
       throw new Error('Export unavailable: No MVP selected for this workspace.');
     }
 
-    const blueprint = (await rtdbService.getData(`blueprints/${workspaceId}/${activeMvpId}`)) || 
-                      (await rtdbService.getData(`blueprints/${workspaceId}`));
+    let targetDoc = (await rtdbService.getData(`blueprints/${workspaceId}/${activeMvpId}`)) || 
+                    (await rtdbService.getData(`blueprints/${workspaceId}`));
 
-    if (!blueprint) {
+    if (!targetDoc) {
       throw new Error('Export unavailable: No Blueprint found for the selected MVP.');
     }
 
-    if (blueprint.mvpIdeaId && blueprint.mvpIdeaId !== activeMvpId) {
-      throw new Error('Export error: Blueprint does not match currently selected MVP.');
+    // Try loading specific target version if requested
+    if (targetVersion) {
+      const vKey = `v${String(targetVersion).replace(/\./g, '_')}`;
+      const versionDoc = (await rtdbService.getData(`blueprints/${workspaceId}/${activeMvpId}/versions/${vKey}`)) ||
+                         (await rtdbService.getData(`blueprints/${workspaceId}/versions/${vKey}`)) ||
+                         targetDoc.versions?.[vKey];
+      if (versionDoc && (versionDoc.content || versionDoc.projectOverview)) {
+        targetDoc = versionDoc;
+      }
     }
 
-    if (blueprint.status === 'generating') {
-      throw new Error('Export unavailable: Blueprint generation is currently in progress.');
+    // Fallback: If root document has no content or status is failed, recover latest completed version from history
+    if ((!targetDoc.content || targetDoc.status === 'failed') && targetDoc.versions) {
+      const validVersions = Object.values(targetDoc.versions).filter((v) => v && (v.content || v.projectOverview));
+      if (validVersions.length > 0) {
+        validVersions.sort((a, b) => (parseFloat(b.version) || 0) - (parseFloat(a.version) || 0));
+        targetDoc = validVersions[0];
+      }
     }
 
-    if (blueprint.status === 'failed' || !blueprint.content) {
-      throw new Error('Export unavailable: The selected Blueprint is in an invalid or failed state.');
+    const rawContent = targetDoc.content || (targetDoc.projectOverview ? targetDoc : null);
+
+    if (!targetDoc || !rawContent) {
+      throw new Error('Export unavailable: No valid completed Blueprint content found. Please click Regenerate to create a fresh Blueprint.');
     }
 
-    const validatedContent = validateBlueprintOutput(blueprint.content);
+    const validatedContent = validateBlueprintOutput(rawContent);
 
     const exportDocument = {
-      blueprintId: blueprint.blueprintId || `bp_${workspaceId}_${activeMvpId}`,
-      workspaceId: blueprint.workspaceId || workspaceId,
-      mvpIdeaId: blueprint.mvpIdeaId || activeMvpId,
-      version: blueprint.version || '1.0',
-      status: blueprint.status || 'completed',
-      lastModifiedSource: blueprint.lastModifiedSource || 'ai_generation',
-      aiProvider: blueprint.aiProvider || 'google_gemini',
-      aiModel: blueprint.aiModel || 'gemini-2.0-flash',
-      generatedAt: blueprint.generatedAt || blueprint.createdAt || Date.now(),
-      updatedAt: blueprint.updatedAt || Date.now(),
+      blueprintId: targetDoc.blueprintId || `bp_${workspaceId}_${activeMvpId}`,
+      workspaceId: targetDoc.workspaceId || workspaceId,
+      mvpIdeaId: targetDoc.mvpIdeaId || activeMvpId,
+      version: targetDoc.version || '1.0',
+      status: 'completed',
+      lastModifiedSource: targetDoc.lastModifiedSource || 'ai_generation',
+      aiProvider: targetDoc.aiProvider || 'google_gemini',
+      aiModel: targetDoc.aiModel || 'gemini-2.0-flash',
+      generatedAt: targetDoc.generatedAt || targetDoc.createdAt || Date.now(),
+      updatedAt: targetDoc.updatedAt || Date.now(),
 
-      ideaTitle: blueprint.ideaTitle || org.name || 'Project Blueprint',
-      problemStatement: blueprint.problemStatement || '',
-      description: blueprint.description || '',
+      ideaTitle: targetDoc.ideaTitle || org.name || 'Project Blueprint',
+      problemStatement: targetDoc.problemStatement || '',
+      description: targetDoc.description || '',
 
       content: validatedContent,
-      communityIntelligence: blueprint.communityIntelligence || null,
-      communityIntelligenceStatus: blueprint.communityIntelligenceStatus || 'not_analyzed',
+      communityIntelligence: targetDoc.communityIntelligence || null,
+      communityIntelligenceStatus: targetDoc.communityIntelligenceStatus || 'not_analyzed',
     };
 
-    const filename = sanitizeFilename(blueprint.ideaTitle || org.name, blueprint.version || '1.0', 'json');
+    const filename = sanitizeFilename(targetDoc.ideaTitle || org.name, targetDoc.version || '1.0', 'json');
 
     console.log(`✅ [Blueprint JSON Export Ready] Filename: "${filename}"`);
 
