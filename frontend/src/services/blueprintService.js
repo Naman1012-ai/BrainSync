@@ -207,7 +207,16 @@ export const blueprintService = {
 
     const parseList = (versionsObj) => {
       if (!versionsObj || typeof versionsObj !== 'object') return [];
-      const list = Object.values(versionsObj).filter((v) => v && typeof v === 'object' && (v.status === 'completed' || v.version));
+      const list = Object.values(versionsObj)
+        .filter((v) => v && typeof v === 'object' && (v.status === 'completed' || v.version || v.projectOverview || v.content))
+        .map((v) => ({
+          ...v,
+          versionId: v.versionId || v.version,
+          version: String(v.version || v.versionId || '1.0'),
+          status: v.status || 'completed',
+          timestamp: v.timestamp || v.generatedAt || v.updatedAt || Date.now(),
+          content: v.content || (v.projectOverview ? v : null),
+        }));
       list.sort((a, b) => (parseFloat(b.version) || 0) - (parseFloat(a.version) || 0));
       return list;
     };

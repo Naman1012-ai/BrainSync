@@ -67,11 +67,11 @@ function IdeaBoardContent() {
   const selectedMvp = stats?.selectedMvp;
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 overflow-x-hidden">
       {/* 1. WORKSPACE DASHBOARD KPI STATS GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
         {/* Card 1: Total Proposals */}
-        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl">
+        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl w-full">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-mono">
               Total Proposals
@@ -87,7 +87,7 @@ function IdeaBoardContent() {
         </Card>
 
         {/* Card 2: Community Votes */}
-        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl">
+        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl w-full">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-mono">
               Community Votes
@@ -103,7 +103,7 @@ function IdeaBoardContent() {
         </Card>
 
         {/* Card 3: Selected MVP Status */}
-        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl">
+        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl w-full">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-mono">
               Winning MVP
@@ -123,7 +123,7 @@ function IdeaBoardContent() {
         </Card>
 
         {/* Card 4: Team Roster */}
-        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl">
+        <Card className="p-5 bg-white border border-slate-200 shadow-xs space-y-2 rounded-2xl w-full">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-mono">
               Team Roster
@@ -141,11 +141,11 @@ function IdeaBoardContent() {
 
       {/* 2. FEATURED SELECTED MVP HERO BANNER */}
       {selectedMvp && (
-        <Card className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl border border-indigo-800/80 shadow-xl relative overflow-hidden">
+        <Card className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl border border-indigo-800/80 shadow-xl relative overflow-hidden w-full">
           <div className="absolute top-0 right-0 h-40 w-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-3 max-w-2xl">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 p-6 sm:p-8 rounded-2xl w-full relative z-10">
+            <div className="space-y-3 max-w-2xl w-full">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="success" className="bg-amber-500 text-white font-bold flex items-center gap-1 shadow-sm">
                   <Trophy className="h-3.5 w-3.5" /> Workspace Winning MVP
@@ -169,33 +169,33 @@ function IdeaBoardContent() {
               </div>
             </div>
 
-            <div className="flex flex-wrap md:flex-col items-start md:items-end gap-2.5 shrink-0">
-              <Link to={`/workspaces/${orgId}/ideas/${selectedMvp.ideaId}/blueprint`}>
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto shrink-0">
+              <Link to={`/workspaces/${orgId}/ideas/${selectedMvp.ideaId}/blueprint`} className="w-full sm:w-auto">
                 <Button
                   variant="primary"
                   size="sm"
                   icon={<FileText className="h-4 w-4 text-purple-200" />}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md"
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md w-full justify-center"
                 >
                   View Blueprint
                 </Button>
               </Link>
-              <Link to={`/workspaces/${orgId}/ideas/${selectedMvp.ideaId}/tasks`}>
+              <Link to={`/workspaces/${orgId}/ideas/${selectedMvp.ideaId}/tasks`} className="w-full sm:w-auto">
                 <Button
                   variant="secondary"
                   size="sm"
                   icon={<CheckSquare className="h-4 w-4 text-indigo-300" />}
-                  className="bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border-indigo-800 font-bold text-xs"
+                  className="bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border-indigo-800 font-bold text-xs w-full justify-center"
                 >
                   Sprint Task Board
                 </Button>
               </Link>
-              <Link to={`/workspaces/${orgId}/ideas/${selectedMvp.ideaId}/dashboard`}>
+              <Link to={`/workspaces/${orgId}/ideas/${selectedMvp.ideaId}/dashboard`} className="w-full sm:w-auto">
                 <Button
                   variant="secondary"
                   size="sm"
                   icon={<BarChart2 className="h-4 w-4 text-slate-300" />}
-                  className="bg-slate-800/80 hover:bg-slate-800 text-slate-200 border-slate-700 font-bold text-xs"
+                  className="bg-slate-800/80 hover:bg-slate-800 text-slate-200 border-slate-700 font-bold text-xs w-full justify-center"
                 >
                   Progress Metrics
                 </Button>
@@ -206,10 +206,10 @@ function IdeaBoardContent() {
       )}
 
       {/* 3. FILTER TABS & SEARCH / SORT CONTROLS BAR */}
-      <div className="space-y-4">
+      <div className="space-y-4 w-full">
         {/* Filter Category Tabs */}
-        <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-2 overflow-x-auto">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-2 w-full">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none w-full">
             {[
               { id: 'all', label: `All Proposals (${ideas.length})`, icon: Lightbulb },
               { id: 'selected', label: selectedMvp ? '🏆 Winning MVP' : '🏆 Winning MVP (0)', icon: Trophy },
@@ -222,7 +222,7 @@ function IdeaBoardContent() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveFilter(tab.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
                     active
                       ? 'bg-indigo-600 text-white shadow-sm'
                       : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900'
@@ -234,12 +234,12 @@ function IdeaBoardContent() {
             })}
           </div>
 
-          <Link to="/explore">
+          <Link to="/explore" className="shrink-0">
             <Button
               variant="secondary"
               size="sm"
               icon={<Globe className="h-3.5 w-3.5 text-indigo-600" />}
-              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 font-bold text-xs whitespace-nowrap shrink-0"
+              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 font-bold text-xs whitespace-nowrap"
             >
               Explore Public Feed
             </Button>
@@ -247,18 +247,18 @@ function IdeaBoardContent() {
         </div>
 
         {/* Search, Sort & Create Action Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mt-6 w-full bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
           <div className="relative w-full sm:w-80">
             <Input
               placeholder="Search by title, problem, or tech stack..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 text-xs"
+              className="pl-9 text-xs w-full"
             />
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end flex-wrap sm:flex-nowrap">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0 font-mono">
               Sort By:
             </span>
@@ -269,7 +269,7 @@ function IdeaBoardContent() {
               ]}
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-40 py-1 text-xs"
+              className="w-full sm:w-40 py-1 text-xs"
             />
 
             {!isFrozen && (
@@ -278,7 +278,7 @@ function IdeaBoardContent() {
                 size="sm"
                 icon={<Plus className="h-4 w-4" />}
                 onClick={handleOpenCreateModal}
-                className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+                className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white font-bold w-full sm:w-auto justify-center"
               >
                 Propose Idea
               </Button>

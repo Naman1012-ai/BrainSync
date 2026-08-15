@@ -17,7 +17,7 @@ export default function MembersPage() {
   if (!org) return null;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 overflow-x-hidden">
       {/* Invite Code Component */}
       <InviteCodeDisplay inviteCode={org.inviteCode} />
 

@@ -247,10 +247,12 @@ export const blueprintController = {
         orgId: workspaceId,
         mvpIdeaId: activeMvpId,
         ideaId: activeMvpId,
+        versionId: nextVersion,
         activeVersionId: nextVersion,
         activeVersionKey: versionKey,
         version: nextVersion,
         status: 'completed',
+        timestamp: Date.now(),
         lastModifiedSource: 'ai_generation',
         
         aiProvider: geminiResult.aiProvider,

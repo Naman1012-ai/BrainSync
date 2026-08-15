@@ -178,7 +178,7 @@ export default function IdeaDetailPage() {
   const statusOptions = ['Ideation', 'Voting', 'Selected MVP', 'Project', 'Completed', 'Archived'];
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-12">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 overflow-x-hidden pb-12">
       {/* Main Proposal Card */}
       <Card className="p-8">
         {/* Imported Attribution Section */}

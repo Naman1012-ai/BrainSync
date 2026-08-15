@@ -69,7 +69,7 @@ function DashboardContent() {
     taskSummary?.total > 0 ? Math.round((taskSummary.completed / taskSummary.total) * 100) : 0;
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 overflow-x-hidden">
       {/* 1. Project Overview Hero Banner */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white p-8 rounded-3xl border border-slate-700/60 shadow-2xl backdrop-blur-md">
         <div className="absolute top-0 right-0 h-40 w-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />

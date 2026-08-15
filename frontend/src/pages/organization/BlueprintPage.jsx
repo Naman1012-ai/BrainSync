@@ -252,13 +252,33 @@ export default function BlueprintPage() {
     return [];
   }, [blueprintVersions, blueprint]);
 
-  // Resolved active/displayed blueprint (supports switching to historical versions)
+  // Resolved active/displayed blueprint (supports switching to historical versions & safe fallback extraction)
   const displayedBlueprint = React.useMemo(() => {
     if (selectedVersionKey && effectiveBlueprintVersions.length > 0) {
-      const matched = effectiveBlueprintVersions.find((v) => String(v.version) === String(selectedVersionKey));
-      if (matched) return matched;
+      const matched = effectiveBlueprintVersions.find(
+        (v) =>
+          String(v.version) === String(selectedVersionKey) ||
+          String(v.versionId) === String(selectedVersionKey) ||
+          parseFloat(v.version) === parseFloat(selectedVersionKey)
+      );
+      if (matched) {
+        const contentObj = matched.content || (matched.projectOverview ? matched : null);
+        return {
+          ...matched,
+          status: matched.status || 'completed',
+          content: contentObj,
+        };
+      }
     }
-    return blueprint;
+    if (blueprint) {
+      const contentObj = blueprint.content || (blueprint.projectOverview ? blueprint : null);
+      return {
+        ...blueprint,
+        status: blueprint.status || 'completed',
+        content: contentObj,
+      };
+    }
+    return null;
   }, [selectedVersionKey, effectiveBlueprintVersions, blueprint]);
 
   // Resolved latest version string
@@ -367,7 +387,14 @@ export default function BlueprintPage() {
     setGenerationStageIndex(0);
 
     try {
-      await aiBlueprintService.generateBlueprint(orgId, user.uid);
+      const res = await aiBlueprintService.generateBlueprint(orgId, user.uid);
+      const generatedDoc = res?.data?.blueprint || res?.blueprint;
+
+      // Auto-select latest version & immediately hydrate UI with generated content
+      setSelectedVersionKey(null);
+      if (generatedDoc) {
+        setBlueprint(generatedDoc);
+      }
       NotificationService.success(NOTIFICATION_MESSAGES.ADMIN.BLUEPRINT_SAVED || 'AI Blueprint generated successfully.');
     } catch (err) {
       console.error('[BlueprintPage] handleGenerateBlueprint error:', err);
@@ -481,7 +508,7 @@ export default function BlueprintPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-20">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 overflow-x-hidden pb-20">
       {/* Historical Version Alert Banner */}
       {isViewingHistorical && (
         <div className="p-4 bg-indigo-950/90 border border-indigo-500/50 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-indigo-200 text-xs shadow-xl animate-in fade-in duration-200">
