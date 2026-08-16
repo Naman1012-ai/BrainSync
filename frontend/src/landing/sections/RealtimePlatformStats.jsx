@@ -15,6 +15,7 @@ export function RealtimePlatformStats() {
   });
 
   useEffect(() => {
+    let usersCount = 0;
     let orgsMap = {};
     let wsMap = {};
     let ideasMap = {};
@@ -23,6 +24,7 @@ export function RealtimePlatformStats() {
     let discussionsMap = {};
     let tasksMap = {};
     let blueprintsMap = {};
+    let announcementsCount = 0;
 
     const updateStats = () => {
       // 1. Unique Workspaces count
@@ -101,21 +103,21 @@ export function RealtimePlatformStats() {
       });
 
       setCounts({
-        users: counts.users,
+        users: usersCount,
         workspaces: allWsIds.size,
         proposals: proposalCount,
         votes: totalVotes,
         comments: commentsCount,
         tasks: tasksCount,
         blueprints: blueprintsCount,
-        announcements: counts.announcements,
+        announcements: announcementsCount,
       });
     };
 
     // Subscriptions
     const unsubUsers = rtdbService.subscribe('users', (data) => {
-      const len = data && typeof data === 'object' ? Object.keys(data).length : 0;
-      setCounts((prev) => ({ ...prev, users: len }));
+      usersCount = data && typeof data === 'object' ? Object.keys(data).length : 0;
+      updateStats();
     });
 
     const unsubOrgs = rtdbService.subscribe('organizations', (data) => {
@@ -159,8 +161,8 @@ export function RealtimePlatformStats() {
     });
 
     const unsubAnnouncements = rtdbService.subscribe('announcements', (data) => {
-      const len = data && typeof data === 'object' ? Object.keys(data).length : 0;
-      setCounts((prev) => ({ ...prev, announcements: len }));
+      announcementsCount = data && typeof data === 'object' ? Object.keys(data).length : 0;
+      updateStats();
     });
 
     return () => {
@@ -177,7 +179,7 @@ export function RealtimePlatformStats() {
     };
   }, []);
 
-  const STATS_ITEMS = [
+  const ALL_ITEMS = [
     { label: 'Active Users', val: counts.users, icon: Users, color: 'text-indigo-400' },
     { label: 'Workspaces', val: counts.workspaces, icon: Briefcase, color: 'text-purple-400' },
     { label: 'Proposals', val: counts.proposals, icon: Globe, color: 'text-sky-400' },
@@ -188,30 +190,38 @@ export function RealtimePlatformStats() {
     { label: 'Announcements', val: counts.announcements, icon: Megaphone, color: 'text-indigo-300' },
   ];
 
+  // Display ONLY items with REAL active data (> 0)
+  const activeItems = ALL_ITEMS.filter((item) => item.val > 0);
+  const itemsToRender = activeItems.length > 0 ? activeItems : ALL_ITEMS.filter(item => item.val > 0);
+
+  if (itemsToRender.length === 0) {
+    return null; // Don't render empty zeros section if no telemetry data
+  }
+
   return (
-    <section id="stats" className="py-24 bg-slate-950 border-b border-slate-800/80 relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-        <div className="text-center space-y-4 max-w-3xl mx-auto">
+    <section id="stats" className="py-20 bg-slate-950 border-b border-slate-800/80 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="text-center space-y-3 max-w-3xl mx-auto">
           <span className="px-3 py-1 rounded-full bg-slate-900 border border-purple-500/30 text-purple-300 text-xs font-mono font-bold">
             Live Platform Telemetry
           </span>
 
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
             Realtime Platform Statistics
           </h2>
 
-          <p className="text-base text-slate-400 font-medium">
-            Live platform activity telemetry metrics.
+          <p className="text-xs sm:text-sm text-slate-400 font-medium">
+            Live activity telemetry metrics from active workspaces.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
-          {STATS_ITEMS.map((item) => {
+        <div className="flex flex-wrap items-center justify-center gap-4 max-w-5xl mx-auto">
+          {itemsToRender.map((item) => {
             const IconComp = item.icon;
             return (
               <div
                 key={item.label}
-                className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col items-center justify-center text-center space-y-3 shadow-xl hover:border-purple-500/40 transition-all"
+                className="w-36 sm:w-44 p-5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col items-center justify-center text-center space-y-3 shadow-xl hover:border-purple-500/40 transition-all"
               >
                 <div className={`p-2.5 rounded-xl bg-slate-950 border border-slate-800 ${item.color}`}>
                   <IconComp className="h-5 w-5" />
