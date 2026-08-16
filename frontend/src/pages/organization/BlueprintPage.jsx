@@ -347,7 +347,7 @@ export default function BlueprintPage() {
     setShowExportMenu(false);
 
     try {
-      await aiBlueprintService.exportBlueprintJson(orgId, user.uid, displayedBlueprint?.version);
+      await aiBlueprintService.exportBlueprintJson(orgId, user.uid, displayedBlueprint?.version, displayedBlueprint);
       NotificationService.success('Blueprint exported successfully as JSON.');
     } catch (err) {
       console.error('[BlueprintPage] handleExportJson error:', err);
@@ -368,7 +368,7 @@ export default function BlueprintPage() {
     setShowExportMenu(false);
 
     try {
-      await aiBlueprintService.exportBlueprintPdf(orgId, user.uid, org?.name || 'Workspace', displayedBlueprint?.version);
+      await aiBlueprintService.exportBlueprintPdf(orgId, user.uid, org?.name || 'Workspace', displayedBlueprint?.version, displayedBlueprint);
       NotificationService.success('Blueprint exported successfully as PDF.');
     } catch (err) {
       console.error('[BlueprintPage] handleExportPdf error:', err);
@@ -632,16 +632,17 @@ export default function BlueprintPage() {
                         onTouchStart={() => setShowExportMenu(false)}
                       />
 
-                      <div className="absolute right-0 mt-2 w-52 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl z-50 py-1.5 space-y-1 divide-y divide-slate-800/80">
+                      <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-56 max-w-[calc(100vw-2.5rem)] rounded-xl bg-slate-900 border border-slate-700 shadow-2xl z-50 py-1.5 space-y-1 divide-y divide-slate-800/80 animate-in fade-in zoom-in-95 duration-100">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleExportPdf();
                           }}
-                          className="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-purple-950/80 active:bg-purple-900 hover:text-white flex items-center gap-2.5 font-bold transition-colors touch-manipulation"
+                          className="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-purple-950/80 active:bg-purple-900 hover:text-white flex items-center gap-2.5 font-bold transition-colors touch-manipulation whitespace-nowrap"
                         >
-                          <FileType className="h-4 w-4 text-rose-400 shrink-0" /> Export Professional PDF
+                          <FileType className="h-4 w-4 text-rose-400 shrink-0" />
+                          <span>Export Professional PDF</span>
                         </button>
                         <button
                           type="button"
@@ -649,9 +650,10 @@ export default function BlueprintPage() {
                             e.stopPropagation();
                             handleExportJson();
                           }}
-                          className="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-purple-950/80 active:bg-purple-900 hover:text-white flex items-center gap-2.5 font-bold transition-colors touch-manipulation"
+                          className="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-purple-950/80 active:bg-purple-900 hover:text-white flex items-center gap-2.5 font-bold transition-colors touch-manipulation whitespace-nowrap"
                         >
-                          <FileCode className="h-4 w-4 text-cyan-400 shrink-0" /> Export Structured JSON
+                          <FileCode className="h-4 w-4 text-cyan-400 shrink-0" />
+                          <span>Export Structured JSON</span>
                         </button>
                       </div>
                     </>

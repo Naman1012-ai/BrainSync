@@ -4,6 +4,58 @@ import { getErrorMessage } from '../utils/errorMessages';
 import { generateBlueprintPdf } from './blueprintPdfGenerator.js';
 
 /**
+ * Helper to deliver a generated Blob file across Desktop and Mobile Browsers safely.
+ */
+async function deliverFile(blob, filename, mimeType) {
+  try {
+    const file = new File([blob], filename, { type: mimeType });
+    if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: filename,
+      });
+      return { success: true, method: 'share' };
+    }
+  } catch (shareErr) {
+    if (shareErr.name === 'AbortError') {
+      return { success: true, method: 'cancelled' };
+    }
+    console.warn('[aiBlueprintService] Web Share API skipped/failed:', shareErr);
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+
+  const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    setTimeout(() => {
+      try {
+        const newWin = window.open(url, '_blank');
+        if (!newWin) {
+          window.location.href = url;
+        }
+      } catch (e) {
+        console.warn('[aiBlueprintService] Mobile window open fallback:', e);
+      }
+    }, 300);
+  }
+
+  setTimeout(() => {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+    URL.revokeObjectURL(url);
+  }, 10000);
+
+  return { success: true, method: 'download' };
+}
+
+/**
  * Service Layer for AI Blueprint Preparation & Context Formatting.
  * Acts as the boundary between Frontend UI and Backend Express Server.
  */
@@ -41,61 +93,59 @@ export const aiBlueprintService = {
   /**
    * Phase 6: Client-facing method to export validated Blueprint JSON.
    */
-  exportBlueprintJson: async (workspaceId, userUid, targetVersion = null) => {
+  /**
+   * Phase 6: Client-facing method to export validated Blueprint JSON.
+   */
+  exportBlueprintJson: async (workspaceId, userUid, targetVersion = null, localBlueprint = null) => {
     if (!workspaceId || !userUid) {
       throw new Error('Workspace ID and User UID are required.');
     }
-    const result = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid, targetVersion });
+    let jsonString = '';
+    let filename = '';
 
-    const blob = new Blob([result.jsonString], { type: 'application/json;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', result.filename);
-    document.body.appendChild(link);
-    link.click();
+    if (localBlueprint && localBlueprint.content) {
+      jsonString = JSON.stringify(localBlueprint, null, 2);
+      const safeTitle = String(localBlueprint.ideaTitle || 'project')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '') || 'project';
+      filename = `convia-blueprint-${safeTitle}-v${localBlueprint.version || '1.0'}.json`;
+    } else {
+      const result = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid, targetVersion });
+      jsonString = result.jsonString || JSON.stringify(result.exportData, null, 2);
+      filename = result.filename || 'convia-blueprint.json';
+    }
 
-    setTimeout(() => {
-      if (document.body.contains(link)) {
-        document.body.removeChild(link);
-      }
-      URL.revokeObjectURL(url);
-    }, 1000);
+    const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
+    await deliverFile(blob, filename, 'application/json');
 
-    return result;
+    return { success: true, filename };
   },
 
   /**
    * Phase 6: Client-facing method to export validated Blueprint PDF.
    */
-  exportBlueprintPdf: async (workspaceId, userUid, orgName = 'Workspace', targetVersion = null) => {
+  exportBlueprintPdf: async (workspaceId, userUid, orgName = 'Workspace', targetVersion = null, localBlueprint = null) => {
     if (!workspaceId || !userUid) {
       throw new Error('Workspace ID and User UID are required.');
     }
 
-    const jsonResult = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid, targetVersion });
-    const blueprintDoc = jsonResult.exportData;
+    let blueprintDoc = localBlueprint;
+    let filename = '';
 
-    const { doc, filename } = generateBlueprintPdf(blueprintDoc, orgName);
-
-    try {
-      doc.save(filename);
-    } catch (err) {
-      console.warn('[aiBlueprintService] standard doc.save failed, using blob fallback for mobile:', err);
-      const pdfBlob = doc.output('blob');
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(() => {
-        if (document.body.contains(link)) {
-          document.body.removeChild(link);
-        }
-        URL.revokeObjectURL(url);
-      }, 1000);
+    if (!blueprintDoc || !blueprintDoc.content) {
+      const jsonResult = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid, targetVersion });
+      blueprintDoc = jsonResult.exportData;
     }
+
+    const pdfResult = generateBlueprintPdf(blueprintDoc, orgName);
+    const doc = pdfResult.doc;
+    filename = pdfResult.filename;
+
+    const pdfBlob = doc.output('blob');
+    await deliverFile(pdfBlob, filename, 'application/pdf');
 
     return {
       success: true,

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,6 +12,7 @@ import {
   LogOut,
   User,
   Menu,
+  X,
   Globe,
   Briefcase,
   LayoutDashboard,
@@ -27,6 +29,7 @@ export function Navbar({ onMobileMenuToggle = () => {} }) {
   const location = useLocation();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const adminEnvEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@convia.dev').toLowerCase().trim();
   const userEmail = (user?.email || '').toLowerCase().trim();
@@ -50,14 +53,37 @@ export function Navbar({ onMobileMenuToggle = () => {} }) {
 
   const isCurrentPath = (path) => location.pathname === path;
 
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
+
+  const handleMobileMenuToggle = (e) => {
+    if (e) e.stopPropagation();
+    // Check if a parent layout passed an explicit custom mobile toggle handler (e.g., OrgLayout)
+    if (typeof onMobileMenuToggle === 'function' && onMobileMenuToggle.length > 0) {
+      onMobileMenuToggle();
+    } else if (typeof onMobileMenuToggle === 'function' && onMobileMenuToggle.toString().includes('setIsMobileOpen')) {
+      onMobileMenuToggle();
+    } else {
+      setIsMobileMenuOpen((prev) => !prev);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md">
       <div className="flex h-16 items-center justify-between px-4 sm:px-8 max-w-7xl mx-auto">
         {/* Brand Logo & Mobile Toggle */}
         <div className="flex items-center gap-4">
           <button
-            onClick={onMobileMenuToggle}
-            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 sm:hidden"
+            onClick={handleMobileMenuToggle}
+            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 sm:hidden focus:outline-none focus:ring-2 focus:ring-indigo-500"
             aria-label="Toggle Navigation Menu"
           >
             <Menu className="h-6 w-6" />
@@ -222,6 +248,133 @@ export function Navbar({ onMobileMenuToggle = () => {} }) {
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
       />
+
+      {/* Mobile Navigation Drawer (AppLayout & General Mobile Navigation - Portaled to document.body) */}
+      {isMobileMenuOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[99999] flex sm:hidden">
+            {/* Solid Backdrop overlay */}
+            <div
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+
+            {/* Drawer Container - Solid Bold Dark Theme */}
+            <div className="relative flex w-72 max-w-[85vw] flex-1 flex-col bg-slate-900 text-slate-100 p-5 shadow-2xl z-[99999] border-r border-slate-800">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <Link
+                  to="/dashboard"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5"
+                >
+                  <img src="/convia-logo.png" alt="Convia Logo" className="h-8 w-8 rounded-xl object-contain shadow-sm" />
+                  <span className="text-lg font-extrabold text-white tracking-tight">Convia</span>
+                </Link>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white focus:outline-none"
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Mobile Navigation Links */}
+              <nav className="flex-1 space-y-1.5 py-5 text-sm font-medium">
+                <Link
+                  to="/dashboard"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                    isCurrentPath('/dashboard')
+                      ? 'bg-indigo-600 text-white font-extrabold shadow-md'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <LayoutDashboard className="h-5 w-5 text-indigo-400" />
+                  <span>Dashboard</span>
+                </Link>
+
+                <Link
+                  to="/explore"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                    isCurrentPath('/explore')
+                      ? 'bg-indigo-600 text-white font-extrabold shadow-md'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <Globe className="h-5 w-5 text-purple-400" />
+                  <span>Explore Ideas</span>
+                </Link>
+
+                <Link
+                  to="/workspaces"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                    isCurrentPath('/workspaces')
+                      ? 'bg-indigo-600 text-white font-extrabold shadow-md'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <Briefcase className="h-5 w-5 text-sky-400" />
+                  <span>Workspaces</span>
+                </Link>
+
+                {isAdmin && (
+                  <Link
+                    to="/admin/dashboard"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-purple-300 bg-purple-950/60 font-bold border border-purple-800/50 hover:bg-purple-900/60 transition-all"
+                  >
+                    <ShieldCheck className="h-5 w-5 text-purple-400" />
+                    <span>Admin Portal</span>
+                  </Link>
+                )}
+
+                <Link
+                  to="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                    isCurrentPath('/profile')
+                      ? 'bg-indigo-600 text-white font-extrabold shadow-md'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <User className="h-5 w-5 text-slate-400" />
+                  <span>My Profile</span>
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsReportModalOpen(true);
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-purple-300 hover:bg-purple-950/40 font-semibold transition-colors"
+                >
+                  <Flag className="h-5 w-5 text-purple-400" />
+                  <span>Report Issue</span>
+                </button>
+              </nav>
+
+              {/* Footer Sign Out */}
+              {user && (
+                <div className="border-t border-slate-800 pt-4">
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleSignOut();
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-rose-400 hover:bg-rose-950/40 font-semibold transition-colors"
+                  >
+                    <LogOut className="h-5 w-5 text-rose-500" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
     </header>
   );
 }

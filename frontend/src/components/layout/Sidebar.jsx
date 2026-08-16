@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useParams } from 'react-router-dom';
 import { Lightbulb, FileText, CheckSquare, Users, ArrowLeft, Settings, Home, LayoutDashboard, MessageSquare } from 'lucide-react';
 import { cn } from '../../utils/cn';
@@ -7,6 +8,17 @@ export function Sidebar({ status = 'ideation', isMobileOpen = false, onCloseMobi
   const { orgId, ideaId } = useParams();
 
   const isIdeaActive = Boolean(ideaId);
+
+  useEffect(() => {
+    if (isMobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileOpen]);
 
   const navItems = isIdeaActive
     ? [
@@ -130,18 +142,20 @@ export function Sidebar({ status = 'ideation', isMobileOpen = false, onCloseMobi
         {sidebarContent}
       </aside>
 
-      {/* Mobile Drawer Sidebar */}
-      {isMobileOpen && (
-        <div className="fixed inset-0 z-50 flex sm:hidden">
-          <div
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
-            onClick={onCloseMobile}
-          />
-          <div className="relative flex w-64 max-w-xs flex-1 flex-col bg-slate-900 pt-5 pb-4 shadow-xl">
-            {sidebarContent}
-          </div>
-        </div>
-      )}
+      {/* Mobile Drawer Sidebar - Portaled to document.body */}
+      {isMobileOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[99999] flex sm:hidden">
+            <div
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
+              onClick={onCloseMobile}
+            />
+            <div className="relative flex w-64 max-w-xs flex-1 flex-col bg-slate-900 border-r border-slate-800 pt-5 pb-4 shadow-2xl z-[99999]">
+              {sidebarContent}
+            </div>
+          </div>,
+          document.body
+        )}
     </>
   );
 }
