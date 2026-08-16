@@ -100,4 +100,6 @@ export function ConviaDifferenceSection() {
   );
 }
 
-export { ConviaDifferenceSection as BrainSyncDifferenceSection };
+export function BrainSyncDifferenceSection() {
+  return <ConviaDifferenceSection />;
+}
