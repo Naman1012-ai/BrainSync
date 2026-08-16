@@ -18,13 +18,13 @@ const TERMS_TOC = [
 
 export default function TermsOfServicePage() {
   useEffect(() => {
-    document.title = 'Terms of Service — BrainSync';
+    document.title = 'Terms of Service — Convia';
   }, []);
 
   return (
     <LegalLayout
       title="Terms of Service"
-      subtitle="These Terms govern your access to and use of BrainSync. Please read them carefully before creating an account or using our platform."
+      subtitle="These Terms govern your access to and use of Convia. Please read them carefully before creating an account or using our platform."
       lastUpdated="July 24, 2026"
       toc={TERMS_TOC}
     >
@@ -35,7 +35,7 @@ export default function TermsOfServicePage() {
             <span className="text-purple-400 font-mono text-sm">1.</span> Acceptance of Terms
           </h2>
           <p>
-            By creating a BrainSync account, logging in, or accessing our services, you agree to be bound by these Terms of Service. If you do not agree to all terms, you may not access or use the platform.
+            By creating a Convia account, logging in, or accessing our services, you agree to be bound by these Terms of Service. If you do not agree to all terms, you may not access or use the platform.
           </p>
         </section>
 
@@ -45,7 +45,7 @@ export default function TermsOfServicePage() {
             <span className="text-purple-400 font-mono text-sm">2.</span> Eligibility
           </h2>
           <p>
-            Users must comply with all applicable local, state, national, and international laws, as well as university or institutional hackathon participation guidelines when using BrainSync.
+            Users must comply with all applicable local, state, national, and international laws, as well as university or institutional hackathon participation guidelines when using Convia.
           </p>
         </section>
 
@@ -88,7 +88,7 @@ export default function TermsOfServicePage() {
             <span className="text-purple-400 font-mono text-sm">5.</span> Public Ideas & Content Ownership
           </h2>
           <p>
-            Creators retain initial ownership over proposals they submit to BrainSync. When a public proposal is imported into a team workspace, collaboration rights apply according to BrainSync&apos;s workspace ownership model.
+            Creators retain initial ownership over proposals they submit to Convia. When a public proposal is imported into a team workspace, collaboration rights apply according to Convia&apos;s workspace ownership model.
           </p>
         </section>
 
@@ -108,7 +108,7 @@ export default function TermsOfServicePage() {
             <span className="text-purple-400 font-mono text-sm">7.</span> Platform Availability
           </h2>
           <p>
-            We strive for high platform availability and low latency. However, BrainSync does not guarantee uninterrupted operation or zero downtime due to cloud infrastructure maintenance or third-party service outages.
+            We strive for high platform availability and low latency. However, Convia does not guarantee uninterrupted operation or zero downtime due to cloud infrastructure maintenance or third-party service outages.
           </p>
         </section>
 
@@ -118,7 +118,7 @@ export default function TermsOfServicePage() {
             <span className="text-purple-400 font-mono text-sm">8.</span> Limitation of Liability
           </h2>
           <p>
-            BrainSync is provided on an &ldquo;AS IS&rdquo; and &ldquo;AS AVAILABLE&rdquo; basis. To the maximum extent permitted by law, BrainSync and its maintainers shall not be liable for indirect, incidental, or consequential damages resulting from platform usage.
+            Convia is provided on an &ldquo;AS IS&rdquo; and &ldquo;AS AVAILABLE&rdquo; basis. To the maximum extent permitted by law, Convia and its maintainers shall not be liable for indirect, incidental, or consequential damages resulting from platform usage.
           </p>
         </section>
 
@@ -128,7 +128,7 @@ export default function TermsOfServicePage() {
             <span className="text-purple-400 font-mono text-sm">9.</span> Account Termination
           </h2>
           <p>
-            BrainSync administrators reserve the right to suspend or terminate accounts that violate these Terms or engage in malicious platform abuse.
+            Convia administrators reserve the right to suspend or terminate accounts that violate these Terms or engage in malicious platform abuse.
           </p>
         </section>
 
@@ -138,7 +138,7 @@ export default function TermsOfServicePage() {
             <span className="text-purple-400 font-mono text-sm">10.</span> Changes to Terms
           </h2>
           <p>
-            We reserve the right to modify these Terms as BrainSync grows. Continued use of the platform following published changes constitutes acceptance of the updated Terms.
+            We reserve the right to modify these Terms as Convia grows. Continued use of the platform following published changes constitutes acceptance of the updated Terms.
           </p>
         </section>
 

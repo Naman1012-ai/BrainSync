@@ -66,8 +66,9 @@ export default function AdminAuditPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `brainsync_audit_logs_${Date.now()}.json`;
+    a.download = `convia_audit_logs_${Date.now()}.json`;
     a.click();
+    URL.revokeObjectURL(url);
     NotificationService.success('Audit logs exported as JSON.');
   };
 
@@ -81,14 +82,15 @@ export default function AdminAuditPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-2.5">
-            <Lock className="h-6 w-6 text-purple-400" /> Platform Security & Administrative Audit Logs
+          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+            <ShieldCheck className="h-7 w-7 text-purple-400" />
+            Audit & System Logs
           </h1>
-          <p className="text-xs text-slate-400 mt-1 font-medium">
-            Complete, immutable audit trail of every administrative action executed across BrainSync.
+          <p className="text-xs text-slate-400 font-medium mt-1">
+            Complete, immutable audit trail of every administrative action executed across Convia.
           </p>
         </div>
 

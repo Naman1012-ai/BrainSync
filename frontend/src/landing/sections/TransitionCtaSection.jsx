@@ -26,7 +26,7 @@ export function TransitionCtaSection() {
             </h2>
 
             <p className="text-base sm:text-lg text-slate-300 font-medium max-w-xl mx-auto">
-              Join thousands of builders using BrainSync to transform scattered ideas into winning hackathon projects.
+              Join thousands of builders using Convia to transform scattered ideas into winning hackathon projects.
             </p>
           </div>
 

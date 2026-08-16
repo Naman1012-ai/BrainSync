@@ -37,7 +37,7 @@ export function HowItWorksSection() {
             3-Step Workflow
           </span>
           <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-            How BrainSync Works
+            How Convia Works
           </h2>
           <p className="text-base text-slate-400 font-medium">
             From chaos to clarity in three simple steps.

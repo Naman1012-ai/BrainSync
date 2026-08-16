@@ -12,7 +12,7 @@ export function BlueprintPreview() {
           </div>
           <div>
             <h4 className="text-base font-extrabold text-white">AI Technical PRD & Blueprint</h4>
-            <p className="text-xs text-slate-400 font-medium">Generated in 1.4s via BrainSync AI Engine</p>
+            <p className="text-xs text-slate-400 font-medium">Generated in 1.4s via Convia AI Engine</p>
           </div>
         </div>
 

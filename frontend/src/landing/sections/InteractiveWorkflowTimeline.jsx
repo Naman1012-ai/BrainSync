@@ -100,7 +100,7 @@ export function InteractiveWorkflowTimeline() {
           </h2>
 
           <p className="text-base text-slate-400 font-medium">
-            Click any step to inspect how BrainSync guides your team from start to finish.
+            Click any step to inspect how Convia guides your team from start to finish.
           </p>
         </div>
 

@@ -42,7 +42,7 @@ export function SuccessStoriesSection() {
           </h2>
 
           <p className="text-base text-slate-400 font-medium">
-            Discover how teams built winning projects using BrainSync&apos;s decision workflow.
+            Discover how teams built winning projects using Convia&apos;s decision workflow.
           </p>
         </div>
 

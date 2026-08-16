@@ -30,7 +30,7 @@ export function MvpPreview() {
           <span className="text-purple-300 font-bold">+28 Upvotes (100% Consensus)</span>
         </div>
 
-        <h5 className="text-base font-extrabold text-white">BrainSync Real-Time AI Code Synthesizer</h5>
+        <h5 className="text-base font-extrabold text-white">Convia Real-Time AI Code Synthesizer</h5>
         <p className="text-xs text-slate-300 leading-relaxed font-medium">
           An interactive web surface enabling hackathon teams to submit problem statements, upvote top concepts, and generate technical PRDs instantly.
         </p>

@@ -3,12 +3,12 @@ import { ChevronDown, HelpCircle } from 'lucide-react';
 
 const FAQS = [
   {
-    q: 'Is BrainSync free to use for hackathons and student teams?',
-    a: 'Yes! BrainSync is 100% free for hackathon participants, student builder teams, and open-source contributors. You can create unlimited workspaces and proposals.',
+    q: 'Is Convia free to use for hackathons and student teams?',
+    a: 'Yes! Convia is 100% free for hackathon participants, student builder teams, and open-source contributors. You can create unlimited workspaces and proposals.',
   },
   {
     q: 'How does the AI Technical Blueprint Generator work?',
-    a: 'Once your workspace lead selects the winning MVP proposal, BrainSync analyzes the problem statement, proposed solution, and tech stack to automatically generate system architecture specs, database schemas, REST/GraphQL endpoints, and populates your sprint Kanban board.',
+    a: 'Once your workspace lead selects the winning MVP proposal, Convia analyzes the problem statement, proposed solution, and tech stack to automatically generate system architecture specs, database schemas, REST/GraphQL endpoints, and populates your sprint Kanban board.',
   },
   {
     q: 'Can I invite external teammates to my workspace?',
@@ -20,7 +20,7 @@ const FAQS = [
   },
   {
     q: 'Can I explore public ideas from other builders?',
-    a: 'Yes! BrainSync includes a global Explore Ideas surface where innovators publish open concepts. You can upvote, comment, or import public proposals directly into your workspace.',
+    a: 'Yes! Convia includes a global Explore Ideas surface where innovators publish open concepts. You can upvote, comment, or import public proposals directly into your workspace.',
   },
 ];
 
@@ -43,7 +43,7 @@ export function FaqSection() {
             Frequently Asked Questions
           </h2>
           <p className="text-base text-slate-400 font-medium">
-            Everything you need to know about BrainSync.
+            Everything you need to know about Convia.
           </p>
         </div>
 

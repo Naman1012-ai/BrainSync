@@ -23,29 +23,22 @@ export function AdminGuard() {
     return <Navigate to="/signin" replace />;
   }
 
-  const adminEnvEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@brainsync.com').toLowerCase().trim();
-  const userEmail = (user.email || '').toLowerCase().trim();
-
-  const isAdmin = Boolean(
-    userProfile?.role === 'superadmin' ||
-    userProfile?.role === 'admin' ||
-    userProfile?.isAdmin === true ||
-    (adminEnvEmail && userEmail === adminEnvEmail)
-  );
+  const adminEnvEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@convia.dev').toLowerCase().trim();
+  const userEmail = (user?.email || '').toLowerCase().trim();
+  const isAdmin = Boolean(userEmail && userEmail === adminEnvEmail);
 
   if (!isAdmin) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-white p-6">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 p-6 text-slate-100">
         <Card className="max-w-md w-full bg-slate-900 border border-slate-800 p-8 text-center space-y-6 backdrop-blur-xl shadow-2xl">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 mx-auto">
             <ShieldAlert className="h-8 w-8" />
           </div>
 
           <div className="space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-rose-500">Security Gate</span>
-            <h2 className="text-2xl font-black text-white tracking-tight">Access Denied</h2>
-            <p className="text-xs text-slate-400 leading-relaxed font-medium">
-              You do not have Super Admin privileges to view the BrainSync Admin Portal.
+            <h2 className="text-xl font-bold text-white tracking-tight">Access Restricted</h2>
+            <p className="text-sm text-slate-400 font-medium leading-relaxed">
+              You do not have Super Admin privileges to view the Convia Admin Portal.
             </p>
           </div>
 

@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 
 export function DemoModal({ isOpen, onClose }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="BrainSync Platform Demo" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Convia Platform Demo" size="lg">
       <div className="space-y-6">
         {/* Demo Video / Interactive Showcase Card */}
         <div className="relative rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl overflow-hidden text-white">
@@ -27,7 +27,7 @@ export function DemoModal({ isOpen, onClose }) {
             </h3>
 
             <p className="text-xs text-slate-300 leading-relaxed font-medium">
-              BrainSync eliminates endless debate during hackathons by structuring proposal collection, community voting, AI blueprint generation, and Kanban sprint execution into one unified workflow.
+              Convia eliminates endless debate during hackathons by structuring proposal collection, community voting, AI blueprint generation, and Kanban sprint execution into one unified workflow.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs font-semibold text-slate-200">

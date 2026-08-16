@@ -62,7 +62,7 @@ export default function AdminAnalyticsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `brainsync_analytics_${Date.now()}.csv`;
+    a.download = `convia_analytics_${Date.now()}.csv`;
     a.click();
     NotificationService.success('Analytics data exported as CSV.');
   };

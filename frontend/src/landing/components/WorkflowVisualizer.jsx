@@ -74,7 +74,7 @@ const STAGES = [
     bgGlow: 'shadow-emerald-500/20',
     description: 'Workspace lead locks the winning proposal as the official hackathon MVP project.',
     cardContent: {
-      title: 'BrainSync AI Blueprint Generator',
+      title: 'Convia AI Blueprint Generator',
       status: 'MVP Locked',
       lead: 'Project Lead Approved',
       metrics: 'Targeting 24-Hour Build',

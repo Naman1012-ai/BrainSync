@@ -481,11 +481,11 @@ export const adminService = {
   subscribeToPlatformSettings: (callback) => {
     const defaultSettings = {
       general: {
-        platformName: 'BrainSync',
-        tagline: 'Real-time AI-Powered Collaborative Workspace for Hackathons',
-        supportEmail: 'support@brainsync.dev',
+        platformName: 'Convia',
+        tagline: 'Where Ideas Converge into Action.',
+        supportEmail: 'support@convia.dev',
         environment: 'Production',
-        copyright: '© 2026 BrainSync Inc. All rights reserved.',
+        copyright: '© 2026 Convia Inc. All rights reserved.',
       },
       auth: {
         requireEmailVerification: true,
@@ -504,7 +504,7 @@ export const adminService = {
       },
       maintenance: {
         maintenanceMode: false,
-        maintenanceMessage: 'BrainSync is currently undergoing scheduled system maintenance.',
+        maintenanceMessage: 'Convia is currently undergoing scheduled system maintenance.',
       },
       featureFlags: {
         ideaImport: true,

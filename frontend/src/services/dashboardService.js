@@ -4,7 +4,7 @@ import { ideaService } from './ideaService';
 import { taskService } from './taskService';
 import { blueprintService } from './blueprintService';
 
-const CACHE_PREFIX = 'brainsync_dashboard_cache_';
+const CACHE_PREFIX = 'convia_dashboard_cache_';
 
 export const dashboardService = {
   /**

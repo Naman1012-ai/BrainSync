@@ -118,7 +118,7 @@ export function Sidebar({ status = 'ideation', isMobileOpen = false, onCloseMobi
       </div>
 
       <div className="text-[10px] text-slate-500 text-center font-mono">
-        BrainSync &copy; {new Date().getFullYear()}
+        Convia &copy; {new Date().getFullYear()}
       </div>
     </div>
   );

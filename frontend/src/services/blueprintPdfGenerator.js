@@ -23,11 +23,11 @@ export function getSafeFilename(title = 'Project', version = '1.0', ext = 'pdf')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '') || 'project';
   const safeVersion = String(version).replace(/[^a-zA-Z0-9.-]/g, '');
-  return `brainsync-blueprint-${safeTitle}-v${safeVersion}.${ext}`;
+  return `convia-blueprint-${safeTitle}-v${safeVersion}.${ext}`;
 }
 
 /**
- * PDF Document Generator for BrainSync AI Blueprints (Phase 6).
+ * PDF Document Generator for Convia AI Blueprints (Phase 6).
  * Renders a crisp, multi-page vector PDF document with selectable text, custom layout, and page numbering.
  */
 export function generateBlueprintPdf(blueprintDoc, orgName = 'Workspace') {
@@ -87,11 +87,11 @@ export function generateBlueprintPdf(blueprintDoc, orgName = 'Workspace') {
   doc.setFillColor(...primaryDark);
   doc.rect(0, 0, pageWidth, 42, 'F');
 
-  // BrainSync Title Logo
+  // Convia Title Logo
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   doc.setTextColor(255, 255, 255);
-  doc.text('BRAINSYNC', margin, 14);
+  doc.text('CONVIA', margin, 14);
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
@@ -391,7 +391,7 @@ export function generateBlueprintPdf(blueprintDoc, orgName = 'Workspace') {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(...textMuted);
-    doc.text('BrainSync AI Blueprint Specification Document · Confidential Project Asset', margin, pageHeight - 7);
+    doc.text('Convia AI Blueprint Specification Document · Confidential Project Asset', margin, pageHeight - 7);
     doc.text(`Page ${p} of ${totalPages}`, pageWidth - margin - 15, pageHeight - 7);
   }
 

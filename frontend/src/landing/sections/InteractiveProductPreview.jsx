@@ -32,7 +32,7 @@ export function InteractiveProductPreview() {
           </div>
 
           <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-            Experience BrainSync Before You Sign In
+            Experience Convia Before You Sign In
           </h2>
 
           <p className="text-base text-slate-400 font-medium">

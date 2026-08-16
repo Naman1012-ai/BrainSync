@@ -58,7 +58,7 @@ export function SignUpForm() {
 
     try {
       await signUp(email, password, displayName);
-      toast.success('Account created successfully! Welcome to BrainSync.');
+      toast.success('Account created successfully! Welcome to Convia.');
       navigate(redirectTarget, { replace: true });
     } catch (err) {
       const msg = getErrorMessage(err.code || err.message);

@@ -13,25 +13,19 @@ import { FinalLandingCtaSection } from '../sections/FinalLandingCtaSection';
 export default function LandingPage() {
   useEffect(() => {
     // Dynamic SEO Document Title & Meta Tags
-    document.title = 'BrainSync — Universal Collaborative Innovation & AI Technical Blueprint Platform';
+    document.title = 'Convia — Where Ideas Converge into Action.';
 
     // Meta Description
-    let metaDesc = document.querySelector('meta[name="description"]');
-    if (!metaDesc) {
-      metaDesc = document.createElement('meta');
-      metaDesc.name = 'description';
-      document.head.appendChild(metaDesc);
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.content = 'Convia represents the convergence of different ideas, perspectives, discussions, and decisions into a clear direction that can be acted upon.';
     }
-    metaDesc.content = 'BrainSync helps teams, startups, and open-source projects transform raw proposals into production-ready technical blueprints and task backlogs.';
 
     // Open Graph Title & Description
-    let ogTitle = document.querySelector('meta[property="og:title"]');
-    if (!ogTitle) {
-      ogTitle = document.createElement('meta');
-      ogTitle.setAttribute('property', 'og:title');
-      document.head.appendChild(ogTitle);
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) {
+      ogTitle.content = 'Convia — Where Ideas Converge into Action.';
     }
-    ogTitle.content = 'BrainSync — Universal Collaborative Innovation & AI Technical Blueprint Platform';
 
     let ogDesc = document.querySelector('meta[property="og:description"]');
     if (!ogDesc) {

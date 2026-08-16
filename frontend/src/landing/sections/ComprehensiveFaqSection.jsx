@@ -3,28 +3,28 @@ import { ChevronDown, HelpCircle, Sparkles } from 'lucide-react';
 
 const COMPREHENSIVE_FAQS = [
   {
-    q: 'What is BrainSync?',
-    a: 'BrainSync is a real-time collaborative innovation platform that helps startup founders, product teams, open-source communities, and developers move from scattered ideas to a structured MVP proposal and a 16-section AI technical blueprint in minutes.',
+    q: 'What is Convia?',
+    a: 'Convia is a real-time collaborative innovation platform that helps startup founders, product teams, open-source communities, and developers move from scattered ideas to a structured MVP proposal and a 16-section AI technical blueprint in minutes.',
   },
   {
-    q: 'How is BrainSync different from Slack or Discord?',
-    a: 'Chat apps are great for messaging, but key product decisions quickly get lost in chat noise. BrainSync provides structured proposal channels, peer refinement, and weighted democratic voting so your team aligns on priorities instantly.',
+    q: 'How is Convia different from Slack or Discord?',
+    a: 'Chat apps are great for messaging, but key product decisions quickly get lost in chat noise. Convia provides structured proposal channels, peer refinement, and weighted democratic voting so your team aligns on priorities instantly.',
   },
   {
     q: 'How does the AI Technical Blueprint Generator work?',
-    a: 'Once your team locks the winning MVP proposal, BrainSync analyzes the problem statement, proposed tech stack, and solution architecture to automatically generate system architecture specs, database schemas, REST endpoints, team allocations, and Kanban task backlogs.',
+    a: 'Once your team locks the winning MVP proposal, Convia analyzes the problem statement, proposed tech stack, and solution architecture to automatically generate system architecture specs, database schemas, REST endpoints, team allocations, and Kanban task backlogs.',
   },
   {
     q: 'Can I export my blueprints and task boards?',
     a: 'Yes! All AI technical blueprints, database models, API endpoint documentation, and task boards can be exported anytime as validated JSON or styled PDF documents.',
   },
   {
-    q: 'Is BrainSync free to use?',
-    a: 'Yes, BrainSync offers free workspaces for teams, open-source contributors, student projects, and hackathon participants with full real-time collaboration features.',
+    q: 'Is Convia free to use?',
+    a: 'Yes, Convia offers free workspaces for teams, open-source contributors, student projects, and hackathon participants with full real-time collaboration features.',
   },
   {
     q: 'Can my entire team collaborate simultaneously?',
-    a: 'Yes! BrainSync utilizes real-time cloud synchronization to deliver instant state updates across all workspace members for proposals, upvotes, comments, and live sprint task boards.',
+    a: 'Yes! Convia utilizes real-time cloud synchronization to deliver instant state updates across all workspace members for proposals, upvotes, comments, and live sprint task boards.',
   },
 ];
 

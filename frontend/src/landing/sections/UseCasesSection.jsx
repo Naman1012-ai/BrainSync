@@ -48,7 +48,7 @@ export function UseCasesSection() {
             Tailored For Every High-Velocity Team
           </h2>
           <p className="text-base text-slate-400 font-medium">
-            Whether you are competing in a 24-hour hackathon or building an open-source project, BrainSync keeps everyone aligned.
+            Whether you are competing in a 24-hour hackathon or building an open-source project, Convia keeps everyone aligned.
           </p>
         </div>
 

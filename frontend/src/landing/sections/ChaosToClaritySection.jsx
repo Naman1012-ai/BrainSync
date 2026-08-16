@@ -22,12 +22,12 @@ export function ChaosToClaritySection() {
 
         {/* Split Screen Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-          {/* LEFT: Without BrainSync */}
+          {/* LEFT: Without Convia */}
           <div className="p-8 sm:p-10 rounded-3xl bg-slate-900/40 border border-rose-900/40 space-y-6 relative overflow-hidden">
             <div className="flex items-center justify-between pb-4 border-b border-rose-900/40">
               <div className="flex items-center gap-2">
                 <XCircle className="h-5 w-5 text-rose-500" />
-                <h3 className="text-xl font-extrabold text-white">Without BrainSync</h3>
+                <h3 className="text-xl font-extrabold text-white">Without Convia</h3>
               </div>
               <span className="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-rose-950/80 text-rose-400 border border-rose-800">
                 CHAOTIC & STRESSED
@@ -61,12 +61,12 @@ export function ChaosToClaritySection() {
             </div>
           </div>
 
-          {/* RIGHT: With BrainSync */}
+          {/* RIGHT: With Convia */}
           <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-b from-purple-950/70 via-slate-900 to-indigo-950/70 border border-purple-500/50 shadow-2xl shadow-purple-950/50 space-y-6 relative overflow-hidden">
             <div className="flex items-center justify-between pb-4 border-b border-purple-800/60">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                <h3 className="text-xl font-extrabold text-white">With BrainSync</h3>
+                <h3 className="text-xl font-extrabold text-white">With Convia</h3>
               </div>
               <span className="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
                 STRUCTURED & FOCUSED

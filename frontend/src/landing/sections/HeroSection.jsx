@@ -25,16 +25,24 @@ export function HeroSection() {
         </div>
 
         {/* Hero Title & Subtitle */}
-        <div className="space-y-6 max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.15]">
-            Transform Scattered Ideas <br />
-            <span className="bg-gradient-to-r from-purple-400 via-indigo-300 to-indigo-500 bg-clip-text text-transparent">
-              Into Production-Ready Blueprints.
-            </span>
-          </h1>
+        <div className="space-y-6 max-w-4xl mx-auto flex flex-col items-center">
+          <img
+            src="/convia-logo.png"
+            alt="Convia Logo"
+            className="h-20 w-20 rounded-2xl shadow-2xl shadow-indigo-500/20 border border-slate-700/50 object-contain"
+          />
 
-          <p className="text-base sm:text-xl text-slate-300 font-medium leading-relaxed max-w-2xl mx-auto">
-            BrainSync helps startup founders, product teams, open-source communities, and builders pitch proposals, run democratic peer votes, and instantly generate full 16-section AI technical blueprints.
+          <div className="space-y-3 text-center">
+            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black text-white tracking-tight leading-none">
+              Convia
+            </h1>
+            <p className="text-xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-purple-400 via-indigo-300 to-indigo-400 bg-clip-text text-transparent tracking-tight">
+              Where Ideas Converge into Action.
+            </p>
+          </div>
+
+          <p className="text-base sm:text-lg text-slate-300 font-medium leading-relaxed max-w-2xl mx-auto">
+            Convia brings together scattered ideas, team feedback, weighted democratic voting, and instant AI technical blueprints into one clear direction your team can act on immediately.
           </p>
         </div>
 

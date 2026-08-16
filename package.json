@@ -1,8 +1,9 @@
 {
-  "name": "brainsync-root",
+  "name": "convia-root",
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "build": "npm run build --prefix frontend",
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:backend": "node backend/src/index.js",
     "build:frontend": "npm run build --prefix frontend"

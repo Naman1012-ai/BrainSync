@@ -28,7 +28,7 @@ export function Navbar({ onMobileMenuToggle = () => {} }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
-  const adminEnvEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@brainsync.com').toLowerCase().trim();
+  const adminEnvEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@convia.dev').toLowerCase().trim();
   const userEmail = (user?.email || '').toLowerCase().trim();
   const isAdmin = Boolean(
     userProfile?.role === 'superadmin' ||
@@ -63,12 +63,10 @@ export function Navbar({ onMobileMenuToggle = () => {} }) {
             <Menu className="h-6 w-6" />
           </button>
 
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold shadow-md shadow-indigo-200">
-              <Zap className="h-5 w-5 fill-current" />
-            </div>
+          <Link to="/dashboard" className="flex items-center gap-2.5">
+            <img src="/convia-logo.png" alt="Convia Logo" className="h-9 w-9 rounded-xl object-contain shadow-sm" />
             <span className="text-xl font-extrabold tracking-tight text-slate-900">
-              Brain<span className="text-indigo-600">Sync</span>
+              Convia
             </span>
           </Link>
         </div>

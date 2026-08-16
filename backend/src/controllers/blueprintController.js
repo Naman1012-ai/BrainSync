@@ -14,7 +14,7 @@ function sanitizeFilename(title = 'Project', version = '1.0', ext = 'json') {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '') || 'project';
   const safeVersion = String(version).replace(/[^a-zA-Z0-9.-]/g, '');
-  return `brainsync-blueprint-${safeTitle}-v${safeVersion}.${ext}`;
+  return `convia-blueprint-${safeTitle}-v${safeVersion}.${ext}`;
 }
 
 /**

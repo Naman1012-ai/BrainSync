@@ -59,7 +59,7 @@ export const geminiService = {
 
     // 1. Define Strict System & Role Instructions
     const systemInstruction = `
-You are the BrainSync Master AI Architect — a combined elite Product Manager, Technical Architect, Security Engineer, DevOps Specialist, UI/UX Lead, and Hackathon Mentor.
+You are the Convia Master AI Architect — a combined elite Product Manager, Technical Architect, Security Engineer, DevOps Specialist, UI/UX Lead, and Hackathon Mentor.
 
 YOUR TASK:
 Analyze the provided hackathon/project MVP context and generate a complete, actionable, highly specific Technical Blueprint.
@@ -79,7 +79,7 @@ TECHNICAL GUIDELINES:
    - Design a comprehensive database schema. Explicitly include core NECESSARY entities (e.g. Users, Core Resources) with required fields, as well as secondary OPTIONAL entities (e.g. Audit Logs, Analytics Events, Notifications) with optional fields.
 
 OUTPUT FORMAT:
-   - You MUST return ONLY valid JSON matching the 16-section BrainSync Blueprint Schema.
+   - You MUST return ONLY valid JSON matching the 16-section Convia Blueprint Schema.
    - Do NOT include conversational filler, markdown intro paragraphs, or generic motivational boilerplate.
    - Every recommendation MUST directly address the specific MVP.
 
@@ -187,7 +187,7 @@ ${JSON.stringify(contextPayload.questions || [], null, 2)}
     const ai = new GoogleGenAI({ apiKey });
 
     const systemInstruction = `
-You are the BrainSync Community Intelligence Analyst.
+You are the Convia Community Intelligence Analyst.
 
 YOUR TASK:
 Analyze community feedback (suggestions, comments, questions) for a hackathon MVP project.

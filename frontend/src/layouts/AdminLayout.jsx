@@ -57,12 +57,14 @@ export function AdminLayout() {
             </button>
 
             <Link to="/admin/dashboard" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-600 text-white font-extrabold shadow-lg shadow-purple-900/50">
-                <Zap className="h-5 w-5 fill-current" />
-              </div>
+              <img
+                src="/convia-logo.png"
+                alt="Convia Logo"
+                className="h-9 w-9 rounded-xl object-contain shadow-lg shadow-purple-900/50"
+              />
               <div>
                 <span className="text-base font-black tracking-tight text-white flex items-center gap-2">
-                  BrainSync <span className="text-purple-400 text-xs px-2 py-0.5 rounded-full bg-purple-950 border border-purple-800 font-mono uppercase">Admin Portal</span>
+                  Convia <span className="text-purple-400 text-xs px-2 py-0.5 rounded-full bg-purple-950 border border-purple-800 font-mono uppercase">Admin Portal</span>
                 </span>
               </div>
             </Link>

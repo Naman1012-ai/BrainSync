@@ -19,11 +19,13 @@ export function AuthLayout() {
 
       {/* Branding Header */}
       <Link to="/" className="mb-6 flex flex-col items-center text-center group focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-xl p-1">
-        <div className="mb-2.5 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-200 group-hover:scale-105 transition-transform">
-          <Zap className="h-6 w-6 fill-current" />
-        </div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">BrainSync</h1>
-        <p className="mt-0.5 text-xs text-slate-500 font-medium">From brainstorm to blueprint in minutes</p>
+        <img
+          src="/convia-logo.png"
+          alt="Convia Logo"
+          className="mb-2.5 h-14 w-14 rounded-2xl shadow-md shadow-indigo-200 group-hover:scale-105 transition-transform object-contain"
+        />
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Convia</h1>
+        <p className="mt-0.5 text-xs text-slate-500 font-medium">Where Ideas Converge into Action.</p>
       </Link>
 
       {/* Main Form Container */}
@@ -32,7 +34,7 @@ export function AuthLayout() {
       </div>
 
       <footer className="mt-8 text-xs text-slate-400">
-        BrainSync Hackathon Collaboration Platform &copy; {new Date().getFullYear()}
+        Convia Platform &copy; {new Date().getFullYear()}
       </footer>
     </div>
   );

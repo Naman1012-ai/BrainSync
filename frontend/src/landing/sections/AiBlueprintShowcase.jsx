@@ -23,7 +23,7 @@ export function AiBlueprintShowcase() {
           </h2>
 
           <p className="text-base sm:text-lg text-slate-300 font-medium">
-            Once an MVP proposal is selected, BrainSync AI automatically generates technical specifications so your team can start building immediately.
+            Once an MVP proposal is selected, Convia AI automatically generates technical specifications so your team can start building immediately.
           </p>
         </div>
 

@@ -68,7 +68,7 @@ export function PricingPreparationSection() {
           </h2>
 
           <p className="text-base text-slate-400 font-medium">
-            BrainSync is 100% free for hackathons and student teams. Advanced enterprise plans are coming soon.
+            Convia is 100% free for hackathons and student teams. Advanced enterprise plans are coming soon.
           </p>
         </div>
 
@@ -125,7 +125,7 @@ export function PricingPreparationSection() {
                 </Link>
               ) : (
                 <button
-                  onClick={() => alert(`${plan.name} is coming soon! BrainSync is currently 100% free.`)}
+                  onClick={() => alert(`${plan.name} is coming soon! Convia is currently 100% free.`)}
                   className="w-full py-3.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 font-bold text-xs hover:text-white transition-colors"
                 >
                   {plan.ctaText} (Coming Soon)

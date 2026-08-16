@@ -24,7 +24,7 @@ export function TeamCollaborationSection() {
           </h2>
 
           <p className="text-base text-slate-400 font-medium">
-            BrainSync creates radical transparency so every teammate feels ownership over the project.
+            Convia creates radical transparency so every teammate feels ownership over the project.
           </p>
         </div>
 

@@ -25,7 +25,7 @@ export const profileService = {
     if (!user || !user.uid) return null;
 
     try {
-      const adminEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@brainsync.com').toLowerCase().trim();
+      const adminEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@convia.dev').toLowerCase().trim();
       const userEmail = (user.email || '').toLowerCase().trim();
       const isAdminEmail = Boolean(adminEmail && userEmail === adminEmail);
 

@@ -13,18 +13,20 @@ export function LandingFooter() {
             <Link
               to="/"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="flex items-center gap-2 group w-fit"
+              className="flex items-center gap-2.5 group w-fit"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-600 text-white font-bold shadow-md shadow-purple-500/20">
-                <Zap className="h-5 w-5 fill-current" />
-              </div>
+              <img
+                src="/convia-logo.png"
+                alt="Convia Logo"
+                className="h-9 w-9 rounded-xl object-contain shadow-md shadow-purple-500/20"
+              />
               <span className="text-xl font-extrabold tracking-tight text-white">
-                Brain<span className="text-purple-400">Sync</span>
+                Convia
               </span>
             </Link>
 
             <p className="text-xs text-slate-300 font-medium leading-relaxed max-w-sm">
-              Real-Time AI-Powered Collaborative Ideation & Technical Blueprint Platform. Transform scattered team ideas into production-ready project MVPs.
+              Where Ideas Converge into Action. Convia brings together scattered ideas, team discussion, weighted voting, and instant AI technical blueprints into a single actionable direction.
             </p>
 
             {/* Social Icons */}
@@ -152,7 +154,7 @@ export function LandingFooter() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 font-medium gap-4">
           <div>
-            &copy; {new Date().getFullYear()} BrainSync Platform. All rights reserved.
+            &copy; {new Date().getFullYear()} Convia Platform. All rights reserved.
           </div>
 
           <div className="flex items-center gap-4 font-mono text-[11px]">

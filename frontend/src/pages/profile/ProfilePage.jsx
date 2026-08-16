@@ -283,7 +283,7 @@ export default function ProfilePage() {
     {
       id: 'early_adopter',
       title: 'Early Adopter',
-      desc: 'BrainSync Platform Innovator',
+      desc: 'Convia Platform Innovator',
       icon: Award,
       unlocked: true,
     },
@@ -347,7 +347,7 @@ export default function ProfilePage() {
               userProfile?.role === 'superadmin' ||
               userProfile?.role === 'admin' ||
               userProfile?.isAdmin === true ||
-              ((import.meta.env.VITE_ADMIN_EMAIL || 'admin@brainsync.com').toLowerCase().trim() === (user?.email || '').toLowerCase().trim())
+              ((import.meta.env.VITE_ADMIN_EMAIL || 'admin@convia.dev').toLowerCase().trim() === (user?.email || '').toLowerCase().trim())
             ) && (
               <Link to="/admin/dashboard">
                 <Button

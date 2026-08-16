@@ -12,7 +12,7 @@ export function CommunityCtaSection() {
         <div className="p-10 sm:p-16 rounded-3xl bg-gradient-to-r from-purple-950/90 via-slate-900 to-indigo-950/90 border border-purple-500/50 shadow-2xl shadow-purple-950/60 text-center space-y-8 relative overflow-hidden">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-950/80 border border-purple-500/30 text-purple-300 text-xs font-mono font-bold">
             <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-            <span>Join the BrainSync Community</span>
+            <span>Join the Convia Community</span>
           </div>
 
           <div className="space-y-4 max-w-3xl mx-auto">

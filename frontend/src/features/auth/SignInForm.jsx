@@ -45,7 +45,7 @@ export function SignInForm() {
 
     try {
       const signedUser = await signIn(email, password);
-      const adminEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@brainsync.com').toLowerCase().trim();
+      const adminEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@convia.dev').toLowerCase().trim();
       const signedInEmail = (signedUser?.email || email).toLowerCase().trim();
       const isAdminLogin = Boolean(adminEmail && signedInEmail === adminEmail);
 
@@ -72,7 +72,7 @@ export function SignInForm() {
     try {
       const user = await signInWithGoogle();
       if (user) {
-        const adminEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@brainsync.com').toLowerCase().trim();
+        const adminEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@convia.dev').toLowerCase().trim();
         const signedInEmail = (user.email || '').toLowerCase().trim();
         const isAdminLogin = Boolean(adminEmail && signedInEmail === adminEmail);
 
@@ -98,7 +98,7 @@ export function SignInForm() {
     <div className="space-y-4">
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-slate-900">Welcome back</h2>
-        <p className="text-sm text-slate-500 mt-1">Sign in to your BrainSync workspace</p>
+        <p className="text-sm text-slate-500 mt-1">Sign in to your Convia workspace</p>
       </div>
 
       {serverError && (

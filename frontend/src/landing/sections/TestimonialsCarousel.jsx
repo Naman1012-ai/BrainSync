@@ -10,7 +10,7 @@ const TESTIMONIALS_DATA = [
     university: 'Stanford University',
     hackathon: 'TreeHacks 2026 Winner',
     photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
-    review: 'BrainSync eliminated our usual 3-hour debate on Friday night. We locked our MVP in 15 minutes, generated our AI Blueprint, and had initial commits pushed before midnight.',
+    review: 'Convia eliminated our usual 3-hour debate on Friday night. We locked our MVP in 15 minutes, generated our AI Blueprint, and had initial commits pushed before midnight.',
   },
   {
     id: 2,
@@ -28,7 +28,7 @@ const TESTIMONIALS_DATA = [
     university: 'UC Berkeley',
     hackathon: 'CalHacks 2026 Grand Prize',
     photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus',
-    review: 'BrainSync keeps technical discussions organized. No more digging through 200 Discord messages to find what feature we agreed to build.',
+    review: 'Convia keeps technical discussions organized. No more digging through 200 Discord messages to find what feature we agreed to build.',
   },
 ];
 
@@ -63,7 +63,7 @@ export function TestimonialsCarousel() {
           </h2>
 
           <p className="text-base text-slate-400 font-medium">
-            Hear how student teams and builders use BrainSync to ship winning projects under pressure.
+            Hear how student teams and builders use Convia to ship winning projects under pressure.
           </p>
         </div>
 

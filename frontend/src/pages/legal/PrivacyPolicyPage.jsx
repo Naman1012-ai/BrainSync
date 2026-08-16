@@ -18,13 +18,13 @@ const PRIVACY_TOC = [
 
 export default function PrivacyPolicyPage() {
   useEffect(() => {
-    document.title = 'Privacy Policy — BrainSync';
+    document.title = 'Privacy Policy — Convia';
   }, []);
 
   return (
     <LegalLayout
       title="Privacy Policy"
-      subtitle="Your privacy is important to us. This Privacy Policy explains how BrainSync collects, uses, stores, and protects your information while using our platform."
+      subtitle="Your privacy is important to us. This Privacy Policy explains how Convia collects, uses, stores, and protects your information while using our platform."
       lastUpdated="July 24, 2026"
       toc={PRIVACY_TOC}
     >
@@ -35,7 +35,7 @@ export default function PrivacyPolicyPage() {
             <span className="text-purple-400 font-mono text-sm">1.</span> Introduction
           </h2>
           <p>
-            BrainSync is committed to protecting your privacy and ensuring transparency regarding the collection and use of personal information. By using our real-time ideation and project consensus platform, you consent to the practices described in this Privacy Policy.
+            Convia is committed to protecting your privacy and ensuring transparency regarding the collection and use of personal information. By using our real-time ideation and project consensus platform, you consent to the practices described in this Privacy Policy.
           </p>
         </section>
 
@@ -89,7 +89,7 @@ export default function PrivacyPolicyPage() {
             <span className="text-purple-400 font-mono text-sm">4.</span> Data Storage & Infrastructure
           </h2>
           <p>
-            Your data is securely stored using Google Cloud Firebase services (Firebase Authentication and Firebase Realtime Database). BrainSync employs TLS/SSL encrypted communication for all client-to-server data transfers.
+            Your data is securely stored using Google Cloud Firebase services (Firebase Authentication and Firebase Realtime Database). Convia employs TLS/SSL encrypted communication for all client-to-server data transfers.
           </p>
         </section>
 
@@ -127,7 +127,7 @@ export default function PrivacyPolicyPage() {
             <span className="text-purple-400 font-mono text-sm">7.</span> Cookies & Local Storage
           </h2>
           <p>
-            BrainSync utilizes essential browser cookies and local storage tokens exclusively for authentication state persistence, session validation, and UI preference caching. We do not sell tracking cookies to third-party ad networks.
+            Convia utilizes essential browser cookies and local storage tokens exclusively for authentication state persistence, session validation, and UI preference caching. We do not sell tracking cookies to third-party ad networks.
           </p>
         </section>
 
@@ -160,7 +160,7 @@ export default function PrivacyPolicyPage() {
             <span className="text-purple-400 font-mono text-sm">10.</span> Policy Updates
           </h2>
           <p>
-            We may update this Privacy Policy periodically to reflect platform enhancements. Significant changes will be broadcasted to active users via the BrainSync announcement system.
+            We may update this Privacy Policy periodically to reflect platform enhancements. Significant changes will be broadcasted to active users via the Convia announcement system.
           </p>
         </section>
 

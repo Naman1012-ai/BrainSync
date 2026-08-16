@@ -199,7 +199,7 @@ export default function AdminAnnouncementsPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. BrainSync v1.0 Production Launch!"
+                  placeholder="e.g. Convia v1.0 Production Launch!"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500 font-bold"

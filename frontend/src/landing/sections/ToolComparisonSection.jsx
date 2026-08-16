@@ -95,7 +95,7 @@ export function ToolComparisonSection() {
             </div>
           </div>
 
-          {/* BrainSync Card */}
+          {/* Convia Card */}
           <div className="p-8 rounded-3xl bg-gradient-to-b from-purple-950/80 via-slate-900 to-indigo-950/80 border border-purple-500/50 shadow-2xl shadow-purple-950/40 space-y-6 flex flex-col justify-between transform hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-3">
               <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
@@ -108,7 +108,7 @@ export function ToolComparisonSection() {
                 <Zap className="h-6 w-6 fill-current" />
               </div>
 
-              <h3 className="text-2xl font-extrabold text-white">BrainSync</h3>
+              <h3 className="text-2xl font-extrabold text-white">Convia</h3>
               <p className="text-xs font-mono text-purple-300 font-bold">Purpose-built for hackathon decision speed</p>
 
               <p className="text-xs text-slate-200 leading-relaxed font-medium">

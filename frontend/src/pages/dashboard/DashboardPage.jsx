@@ -152,7 +152,7 @@ export default function DashboardPage() {
               </span>
             </h1>
             <p className="text-[11px] sm:text-xs text-slate-400 font-medium leading-relaxed">
-              BrainSync Command Center &bull; Low-Latency Workspace Engine
+              Convia Command Center &bull; Low-Latency Workspace Engine
             </p>
           </div>
         </div>

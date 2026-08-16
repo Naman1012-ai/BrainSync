@@ -64,7 +64,7 @@ export default function AdminSettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `brainsync_config_${Date.now()}.json`;
+    a.download = `convia_config_${Date.now()}.json`;
     a.click();
     NotificationService.success('Platform configuration exported as JSON.');
   };
@@ -221,7 +221,7 @@ export default function AdminSettingsPage() {
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-950 border border-slate-800">
               <div>
                 <p className="font-bold text-white">Allow New Registrations</p>
-                <p className="text-[11px] text-slate-400">Enable or disable public signup forms across BrainSync.</p>
+                <p className="text-[11px] text-slate-400">Enable or disable public signup forms across Convia.</p>
               </div>
               <input
                 type="checkbox"

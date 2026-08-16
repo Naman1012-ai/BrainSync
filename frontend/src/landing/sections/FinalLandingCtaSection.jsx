@@ -21,7 +21,7 @@ export function FinalLandingCtaSection() {
             </h2>
 
             <p className="text-base sm:text-lg text-slate-300 font-medium max-w-xl mx-auto">
-              Join teams, startups, and developers worldwide using BrainSync to move from raw ideas to production blueprints in minutes.
+              Join teams, startups, and developers worldwide using Convia to move from raw ideas to production blueprints in minutes.
             </p>
           </div>
 

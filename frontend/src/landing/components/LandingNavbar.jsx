@@ -66,13 +66,15 @@ export function LandingNavbar() {
             to="/"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="flex items-center gap-2.5 group focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-xl p-1"
-            aria-label="BrainSync Home"
+            aria-label="Convia Home"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-indigo-500 text-white font-bold shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform duration-200">
-              <Zap className="h-5 w-5 fill-current" />
-            </div>
+            <img
+              src="/convia-logo.png"
+              alt="Convia Logo"
+              className="h-9 w-9 rounded-xl object-contain shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform duration-200"
+            />
             <span className="text-xl font-extrabold tracking-tight text-white">
-              Brain<span className="text-purple-400">Sync</span>
+              Convia
             </span>
           </Link>
 

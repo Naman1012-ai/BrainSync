@@ -114,7 +114,7 @@ export function CreatePublicIdeaModal({ isOpen, onClose, onSuccess = () => {} })
           <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 mb-2 flex items-center gap-3">
             <Globe className="h-5 w-5 text-indigo-600 shrink-0" />
             <p className="text-xs text-indigo-900 leading-relaxed">
-              Public ideas are visible to all BrainSync innovators. Great for open feedback, networking, or finding future hackathon teammates!
+              Public ideas are visible to all Convia innovators. Great for open feedback, networking, or finding future hackathon teammates!
             </p>
           </div>
 
@@ -192,7 +192,7 @@ export function CreatePublicIdeaModal({ isOpen, onClose, onSuccess = () => {} })
               🎉 Public Idea Published Successfully!
             </h2>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Your proposal has been stored securely in BrainSync and is now live on the public feed for community feedback.
+              Your proposal has been stored securely in Convia and is now live on the public feed for community feedback.
             </p>
           </div>
 
@@ -234,7 +234,7 @@ export function CreatePublicIdeaModal({ isOpen, onClose, onSuccess = () => {} })
           <div className="space-y-2 rounded-xl bg-emerald-50/60 p-4 border border-emerald-100 text-xs text-emerald-900">
             <div className="flex items-center gap-2 font-semibold">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>Stored securely in BrainSync Database</span>
+              <span>Stored securely in Convia Database</span>
             </div>
             <div className="flex items-center gap-2 font-semibold">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />

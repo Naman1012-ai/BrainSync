@@ -30,7 +30,7 @@ export default function ContactEngineeringPage() {
   const supportEmail = 'demo.projects1012@gmail.com';
 
   useEffect(() => {
-    document.title = 'Contact Engineering — BrainSync';
+    document.title = 'Contact Engineering — Convia';
   }, []);
 
   const handleCopyEmail = () => {

@@ -43,7 +43,7 @@ export function WhyItWorksSection() {
           </span>
 
           <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-            Why BrainSync Works
+            Why Convia Works
           </h2>
 
           <p className="text-base text-slate-400 font-medium">

@@ -1,4 +1,4 @@
-# BrainSync Robots.txt
+# Convia Robots.txt
 User-agent: *
 Allow: /
 Allow: /explore
@@ -7,4 +7,4 @@ Disallow: /dashboard/
 Disallow: /org/
 Disallow: /settings/
 
-Sitemap: https://brainsync.dev/sitemap.xml
+Sitemap: https://convia.dev/sitemap.xml

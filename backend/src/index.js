@@ -31,7 +31,7 @@ app.use(authMiddleware);
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'BrainSync Express Backend API',
+    service: 'Convia Express Backend API',
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV || 'development'
   });
@@ -41,10 +41,12 @@ app.get('/api/health', (req, res) => {
 app.use('/api/blueprint', blueprintRouter);
 app.use('/api/uploadthing', uploadthingExpressHandler);
 
-// Start Express Server
-app.listen(PORT, () => {
-  console.log(`🚀 [BrainSync Backend] Express server running at http://localhost:${PORT}`);
-  console.log(`⚡ [BrainSync Backend] Gemini AI Model: ${process.env.GEMINI_MODEL || 'gemini-2.0-flash'}`);
-});
+// Start Express Server (Only in traditional standalone node server environment)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 [Convia Backend] Express server running at http://localhost:${PORT}`);
+    console.log(`⚡ [Convia Backend] Gemini AI Model: ${process.env.GEMINI_MODEL || 'gemini-2.0-flash'}`);
+  });
+}
 
 export default app;
