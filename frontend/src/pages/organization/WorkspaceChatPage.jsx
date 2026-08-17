@@ -39,9 +39,12 @@ export default function WorkspaceChatPage() {
     if (!orgId) return;
 
     setLoadingMessages(true);
-    const unsubscribe = chatService.subscribeToMessages(orgId, 'general', (fetchedMsgs) => {
-      setMessages(fetchedMsgs);
+    const unsubscribe = chatService.subscribeToMessages(orgId, 'general', (fetchedMsgs, err) => {
+      setMessages(fetchedMsgs || []);
       setLoadingMessages(false);
+      if (err && err.code === 'PERMISSION_DENIED') {
+        console.warn('[WorkspaceChatPage] Chat subscription permission warning:', err);
+      }
     });
 
     return () => {

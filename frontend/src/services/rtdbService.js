@@ -192,6 +192,12 @@ export const rtdbService = {
         },
         (error) => {
           debugLog('subscribe [RTDB Err]', path, null, false, error);
+          // Safely signal to subscriber that RTDB load completed with error/empty
+          try {
+            callback(null, error);
+          } catch (e) {
+            console.warn('[rtdbService] Error callback handling failed:', e);
+          }
         }
       );
 

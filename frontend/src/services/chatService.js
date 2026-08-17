@@ -119,14 +119,18 @@ export const chatService = {
    */
   subscribeToMessages: (workspaceId, channelId = 'general', callback) => {
     if (!workspaceId) {
-      callback([]);
+      callback([], null);
       return () => {};
     }
 
     const channelPath = `workspaceChats/${workspaceId}/channels/${channelId}/messages`;
-    return rtdbService.subscribe(channelPath, (data) => {
+    return rtdbService.subscribe(channelPath, (data, err) => {
+      if (err) {
+        callback([], err);
+        return;
+      }
       if (!data || typeof data !== 'object') {
-        callback([]);
+        callback([], null);
         return;
       }
 
@@ -135,7 +139,7 @@ export const chatService = {
         .filter((msg) => msg && msg.messageId)
         .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-      callback(messageList);
+      callback(messageList, null);
     });
   },
 
