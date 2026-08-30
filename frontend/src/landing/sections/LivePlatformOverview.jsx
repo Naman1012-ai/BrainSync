@@ -13,32 +13,22 @@ export function LivePlatformOverview() {
   });
 
   useEffect(() => {
-    // Attempt real-time telemetry calculation from RTDB node snapshots
-    const unsubscribeUsers = rtdbService.subscribe('users', (data) => {
+    // Single secure subscription to public aggregate node 'globalStats'
+    const unsubscribe = rtdbService.subscribe('globalStats', (data) => {
       if (data && typeof data === 'object') {
-        const count = Object.keys(data).length;
-        if (count > 0) setStats((prev) => ({ ...prev, users: count }));
-      }
-    });
-
-    const unsubscribeWorkspaces = rtdbService.subscribe('organizations', (data) => {
-      if (data && typeof data === 'object') {
-        const count = Object.values(data).filter((o) => o && !o.isDeleted).length;
-        if (count > 0) setStats((prev) => ({ ...prev, workspaces: count }));
-      }
-    });
-
-    const unsubscribeIdeas = rtdbService.subscribe('publicIdeas', (data) => {
-      if (data && typeof data === 'object') {
-        const count = Object.values(data).filter((i) => i && !i.isDeleted).length;
-        if (count > 0) setStats((prev) => ({ ...prev, publicIdeas: count }));
+        setStats((prev) => ({
+          users: Number(data.totalUsers ?? data.users ?? prev.users),
+          publicIdeas: Number(data.totalPublicIdeas ?? data.publicIdeas ?? prev.publicIdeas),
+          workspaces: Number(data.totalWorkspaces ?? data.workspaces ?? prev.workspaces),
+          mvps: Number(data.totalMvps ?? data.mvps ?? prev.mvps),
+          tasks: Number(data.totalTasks ?? data.tasks ?? prev.tasks),
+          votes: Number(data.totalVotes ?? data.votes ?? prev.votes),
+        }));
       }
     });
 
     return () => {
-      if (typeof unsubscribeUsers === 'function') unsubscribeUsers();
-      if (typeof unsubscribeWorkspaces === 'function') unsubscribeWorkspaces();
-      if (typeof unsubscribeIdeas === 'function') unsubscribeIdeas();
+      if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, []);
 

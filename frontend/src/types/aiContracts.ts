@@ -1,7 +1,9 @@
 /**
- * BrainSync AI Blueprint - Data Contracts & Schemas (Phase 1)
- * Backend-ready TypeScript contracts for Gemini API integration.
+ * Convia AI Blueprint — Data Contracts & Schemas
+ * Re-exports canonical Blueprint 2.0 contracts while preserving legacy 1.x type compatibility.
  */
+
+export * from './blueprint2Contracts';
 
 // ============================================================================
 // 1. AI INPUT CONTRACT (Payload sent to Gemini API)
@@ -35,10 +37,14 @@ export interface AiBlueprintInputContract {
   suggestions: CommunityItemContext[];
   comments: CommunityItemContext[];
   questions: CommunityItemContext[];
+
+  // Regeneration Controls
+  isRegeneration?: boolean;
+  nextVersion?: string;
 }
 
 // ============================================================================
-// 2. AI OUTPUT CONTRACT (Structured JSON Response from Gemini API)
+// 2. LEGACY AI OUTPUT CONTRACT (16-Section Schema V1)
 // ============================================================================
 
 export type RelevanceLevel = 'high' | 'medium' | 'low' | 'irrelevant';
@@ -121,7 +127,10 @@ export interface AiBlueprintOutputContract {
     primaryDatabase: string;
     entities: Array<{
       entityName: string;
+      entityType?: string;
+      isOptional?: boolean;
       fields: string[];
+      optionalFields?: string[];
     }>;
   };
 
@@ -159,13 +168,14 @@ export interface AiBlueprintOutputContract {
   questionsAnalysis: QuestionAnalysis[];
 
   // 15. Community Insights Summary
-  communityInsightsSummary: string;
+  communityInsightsSummary: any;
 
   // 16. Project Readiness
   projectReadiness: {
     score: number; // 0 - 100
-    readinessLevel: 'Ready for Development' | 'Needs Refinement' | 'Incomplete Concept';
-    reasons: string[];
+    readinessLevel: 'Ready for Development' | 'Needs Refinement' | 'Incomplete Concept' | string;
+    reasons?: string[];
+    keyGaps?: string[];
   };
 }
 
@@ -173,22 +183,38 @@ export interface AiBlueprintOutputContract {
 // 3. BLUEPRINT DOCUMENT SCHEMA (Stored in Realtime Database)
 // ============================================================================
 
-export type BlueprintStatus = 'not_created' | 'generating' | 'completed' | 'failed';
+export type BlueprintStatus =
+  | 'not_created'
+  | 'draft'
+  | 'generating'
+  | 'completed'
+  | 'failed'
+  | 'stale';
 
 export interface BlueprintDocument {
   blueprintId: string;
   workspaceId: string;
+  orgId?: string;
   mvpIdeaId: string;
-  version: string; // e.g. "1.0"
+  ideaId?: string;
+  versionId?: string;
+  activeVersionId?: string;
+  activeVersionKey?: string;
+  version: string; // e.g. "1.0", "2.0"
+  schemaVersion?: number; // 1 (legacy) or 2 (canonical 2.0)
   status: BlueprintStatus;
+  lastModifiedSource?: string;
   
   // Metadata fields
-  aiProvider: string | null; // Null in Phase 1
-  aiModel: string | null;    // Null in Phase 1
+  aiProvider: string | null;
+  aiModel: string | null;
   generatedAt: number | null;
   updatedAt: number;
-  generatedBy: string | null;
   createdAt: number;
+  generatedBy: string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  lastError?: string | null;
 
   // Idea Snapshot Data
   ideaTitle: string;
@@ -198,10 +224,10 @@ export interface BlueprintDocument {
   authorId: string;
   authorName: string;
 
-  // Structured Content (Populated in Phase 2/3 when status === 'completed')
-  content?: AiBlueprintOutputContract;
+  // Structured Content (Union of legacy 16-section contract and Blueprint 2.0 content)
+  content?: AiBlueprintOutputContract | any;
 
-  // Pre-AI Discussion Summary (Phase 1 placeholder structure)
+  // Pre-AI Discussion Summary
   discussionSummary?: {
     commentCount: number;
     suggestionCount: number;
@@ -212,4 +238,12 @@ export interface BlueprintDocument {
       authorName: string;
     }>;
   };
+
+  // Community Intelligence analysis
+  communityIntelligence?: any;
+  communityIntelligenceStatus?: string;
+  communityIntelligenceUpdatedAt?: number;
+
+  // Embedded Version History
+  versions?: Record<string, any>;
 }

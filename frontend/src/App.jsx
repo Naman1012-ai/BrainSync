@@ -108,6 +108,7 @@ export function App() {
                     <Route path="tasks" element={<TaskBoardPage />} />
                     <Route path="dashboard" element={<ProgressDashboardPage />} />
                   </Route>
+                  <Route path="tasks" element={<TaskBoardPage />} />
                   <Route path="members" element={<MembersPage />} />
                   <Route path="chat" element={<WorkspaceChatPage />} />
                   <Route path="settings" element={<SettingsPage />} />
@@ -122,6 +123,7 @@ export function App() {
                     <Route path="tasks" element={<TaskBoardPage />} />
                     <Route path="dashboard" element={<ProgressDashboardPage />} />
                   </Route>
+                  <Route path="tasks" element={<TaskBoardPage />} />
                   <Route path="members" element={<MembersPage />} />
                   <Route path="chat" element={<WorkspaceChatPage />} />
                   <Route path="settings" element={<SettingsPage />} />

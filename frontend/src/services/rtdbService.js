@@ -68,6 +68,39 @@ function getColRef(path) {
 }
 
 /**
+ * Recursively sanitizes any payload before writing to Firebase Realtime Database.
+ * - Removes keys with `undefined` values from objects (Firebase RTDB throws on undefined).
+ * - Recursively processes nested objects and arrays.
+ * - Replaces `undefined` elements within arrays with `null` to avoid sparse holes.
+ * - Preserves explicit `null`, boolean `false`, number `0`, and empty strings `""`.
+ * - Does not mutate the input argument.
+ */
+export function sanitizeForRtdb(data) {
+  if (data === undefined) {
+    return undefined;
+  }
+  if (data === null || typeof data !== 'object') {
+    return data;
+  }
+  if (Array.isArray(data)) {
+    return data.map((item) => {
+      const sanitized = sanitizeForRtdb(item);
+      return sanitized === undefined ? null : sanitized;
+    });
+  }
+  const cleanObj = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== undefined) {
+      const sanitized = sanitizeForRtdb(value);
+      if (sanitized !== undefined) {
+        cleanObj[key] = sanitized;
+      }
+    }
+  }
+  return cleanObj;
+}
+
+/**
  * High-Performance Service Layer (RTDB + Firestore) with Non-Blocking Sockets.
  * Guarantees writes complete in <50ms with zero hanging promises.
  */
@@ -78,31 +111,24 @@ export const rtdbService = {
    * Fetch data snapshot once.
    */
   getData: async (path) => {
+    const startTime = performance.now();
     try {
-      const startTime = performance.now();
-      const dbRef = ref(rtdb, path);
-      const snapshot = await withRtdbTimeout(get(dbRef), 2500);
+      const cleanPath = String(path || '').replace(/^\/|\/$/g, '');
+      const dbRef = cleanPath ? ref(rtdb, cleanPath) : ref(rtdb);
 
-      // Handle RTDB timeout — retry once with a longer timeout before falling back
-      if (snapshot === 'RTDB_TIMEOUT') {
-        debugLog('getData [RTDB Timeout — retrying]', path, null, true);
-        const retrySnapshot = await withRtdbTimeout(get(dbRef), 5000);
-        if (retrySnapshot && typeof retrySnapshot.exists === 'function' && retrySnapshot.exists()) {
-          const val = retrySnapshot.val();
-          debugLog(`getData [RTDB Retry OK] (${Math.round(performance.now() - startTime)}ms)`, path, val, true);
-          return val;
-        }
-        // If retry also timed out or returned no data, fall through to Firestore
-      } else if (snapshot && typeof snapshot.exists === 'function' && snapshot.exists()) {
+      const rtdbPromise = get(dbRef);
+      const snapshot = await withRtdbTimeout(rtdbPromise, 2000);
+
+      if (snapshot && snapshot !== 'RTDB_TIMEOUT' && snapshot.exists()) {
         const val = snapshot.val();
         debugLog(`getData [RTDB] (${Math.round(performance.now() - startTime)}ms)`, path, val, true);
         return val;
       }
 
       // Firestore fallback
-      const parts = path.split('/').filter(Boolean);
+      const parts = cleanPath.split('/').filter(Boolean);
       if (parts.length === 1 || (parts.length === 2 && (parts[0] === 'organization_members' || parts[0] === 'ideas' || parts[0] === 'discussions' || parts[0] === 'invite_codes'))) {
-        const colRef = getColRef(path);
+        const colRef = getColRef(cleanPath);
         const querySnapshot = await getDocs(colRef);
         if (!querySnapshot.empty) {
           const map = {};
@@ -114,7 +140,7 @@ export const rtdbService = {
         }
       }
 
-      const docRef = getDocRef(path);
+      const docRef = getDocRef(cleanPath || 'root');
       const snap = await getDoc(docRef);
       const data = snap.exists() ? snap.data() : null;
       debugLog(`getData [Firestore Doc] (${Math.round(performance.now() - startTime)}ms)`, path, data, true);
@@ -128,20 +154,22 @@ export const rtdbService = {
   setData: async (path, data) => {
     const startTime = performance.now();
     try {
-      const dbRef = ref(rtdb, path);
-      const docRef = getDocRef(path);
+      const cleanPath = String(path || '').replace(/^\/|\/$/g, '');
+      const dbRef = cleanPath ? ref(rtdb, cleanPath) : ref(rtdb);
+      const docRef = getDocRef(cleanPath || 'root');
+      const sanitizedData = sanitizeForRtdb(data);
 
       // Await primary RTDB write with safety timeout
-      await withRtdbTimeout(set(dbRef, data), 1500).catch((e) => console.warn('[RTDB Set Warning]', e));
+      await withRtdbTimeout(set(dbRef, sanitizedData), 1500).catch((e) => console.warn('[RTDB Set Warning]', e));
 
       // Firestore fallback write runs in background to prevent blocking UI
-      if (data !== null) {
-        setDoc(docRef, data, { merge: true }).catch((e) =>
+      if (sanitizedData !== null && sanitizedData !== undefined) {
+        setDoc(docRef, sanitizedData, { merge: true }).catch((e) =>
           console.warn('[Firestore Set Background Warning]', e)
         );
       }
 
-      debugLog(`setData (${Math.round(performance.now() - startTime)}ms)`, path, data, true);
+      debugLog(`setData (${Math.round(performance.now() - startTime)}ms)`, path, sanitizedData, true);
     } catch (error) {
       debugLog('setData', path, data, false, error);
       const errMessage = error.code ? `[${error.code}] ${error.message}` : error.message;
@@ -155,18 +183,22 @@ export const rtdbService = {
   updateData: async (path, updates) => {
     const startTime = performance.now();
     try {
-      const dbRef = ref(rtdb, path);
-      const docRef = getDocRef(path);
+      const cleanPath = String(path || '').replace(/^\/|\/$/g, '');
+      const dbRef = cleanPath ? ref(rtdb, cleanPath) : ref(rtdb);
+      const docRef = getDocRef(cleanPath || 'root');
+      const sanitizedUpdates = sanitizeForRtdb(updates);
 
       // Await primary RTDB update with safety timeout
-      await withRtdbTimeout(update(dbRef, updates), 1500).catch((e) => console.warn('[RTDB Update Warning]', e));
+      await withRtdbTimeout(update(dbRef, sanitizedUpdates), 1500).catch((e) => console.warn('[RTDB Update Warning]', e));
 
       // Firestore fallback update runs in background to prevent blocking UI
-      setDoc(docRef, updates, { merge: true }).catch((e) =>
-        console.warn('[Firestore Update Background Warning]', e)
-      );
+      if (sanitizedUpdates !== null && sanitizedUpdates !== undefined) {
+        setDoc(docRef, sanitizedUpdates, { merge: true }).catch((e) =>
+          console.warn('[Firestore Update Background Warning]', e)
+        );
+      }
 
-      debugLog(`updateData (${Math.round(performance.now() - startTime)}ms)`, path, updates, true);
+      debugLog(`updateData (${Math.round(performance.now() - startTime)}ms)`, path, sanitizedUpdates, true);
     } catch (error) {
       debugLog('updateData', path, updates, false, error);
       const errMessage = error.code ? `[${error.code}] ${error.message}` : error.message;

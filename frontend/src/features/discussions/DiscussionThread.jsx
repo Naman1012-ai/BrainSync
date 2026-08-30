@@ -33,6 +33,8 @@ export function DiscussionThread({ discussion, idea, isIdeaOwner, onToast = () =
   const isSuggestion = discussion.type === 'suggestion';
   const isQuestion = discussion.type === 'question';
 
+  const effectiveOrgId = idea?.orgId || discussion?.orgId || null;
+
   const handleReplySubmit = async (e) => {
     e.preventDefault();
     if (!replyMessage.trim()) return;
@@ -41,8 +43,8 @@ export function DiscussionThread({ discussion, idea, isIdeaOwner, onToast = () =
     try {
       await discussionService.createDiscussion(user, {
         ideaId: discussion.ideaId,
-        orgId: idea?.orgId || null,
-        isPublic: !idea?.orgId,
+        orgId: effectiveOrgId,
+        isPublic: !effectiveOrgId,
         type: 'comment',
         message: replyMessage,
         parentId: discussion.discussionId,
@@ -65,9 +67,11 @@ export function DiscussionThread({ discussion, idea, isIdeaOwner, onToast = () =
     setIsSubmittingEdit(true);
     try {
       await discussionService.updateDiscussion(
+        effectiveOrgId,
         discussion.ideaId,
         discussion.discussionId,
-        { message: editMessage }
+        { message: editMessage },
+        !effectiveOrgId
       );
       setIsEditing(false);
       onToast('Updated successfully!');
@@ -82,10 +86,10 @@ export function DiscussionThread({ discussion, idea, isIdeaOwner, onToast = () =
     if (!window.confirm('Are you sure you want to delete this post?')) return;
     try {
       await discussionService.deleteDiscussion(
+        effectiveOrgId,
         discussion.ideaId,
         discussion.discussionId,
-        !idea?.orgId,
-        idea?.orgId || null
+        !effectiveOrgId
       );
       onToast('Deleted successfully.');
     } catch (err) {
@@ -96,9 +100,11 @@ export function DiscussionThread({ discussion, idea, isIdeaOwner, onToast = () =
   const handleToggleAccept = async () => {
     try {
       await discussionService.toggleAcceptSuggestion(
+        effectiveOrgId,
         discussion.ideaId,
         discussion.discussionId,
-        discussion.isAccepted
+        discussion.isAccepted,
+        !effectiveOrgId
       );
       onToast(
         discussion.isAccepted

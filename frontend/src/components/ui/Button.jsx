@@ -32,6 +32,18 @@ export function Button({
     lg: 'h-11 px-5 text-base rounded-lg gap-2.5',
   };
 
+  const renderIcon = () => {
+    if (!icon) return null;
+    if (React.isValidElement(icon)) return icon;
+    if (typeof icon === 'function' || (typeof icon === 'object' && icon.$$typeof)) {
+      const IconComponent = icon;
+      return <IconComponent className="h-4 w-4 shrink-0" />;
+    }
+    return null;
+  };
+
+  const renderedIcon = renderIcon();
+
   return (
     <button
       type={type}
@@ -53,7 +65,7 @@ export function Button({
         </>
       ) : (
         <>
-          {icon && <span className="shrink-0">{icon}</span>}
+          {renderedIcon && <span className="shrink-0">{renderedIcon}</span>}
           <span>{children}</span>
         </>
       )}
@@ -67,7 +79,7 @@ Button.propTypes = {
   isLoading: PropTypes.bool,
   disabled: PropTypes.bool,
   fullWidth: PropTypes.bool,
-  icon: PropTypes.node,
+  icon: PropTypes.oneOfType([PropTypes.node, PropTypes.elementType, PropTypes.object, PropTypes.func]),
   children: PropTypes.node.isRequired,
   className: PropTypes.string,
   type: PropTypes.string,

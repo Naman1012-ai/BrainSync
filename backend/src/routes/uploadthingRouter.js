@@ -16,9 +16,10 @@ export const uploadRouter = {
     blob: { maxFileSize: '50MB', maxFileCount: 1 },
   })
     .middleware(async ({ req }) => {
-      // Step 4: Server received request
-      console.log('⚡ [UT-Step 4] Server received request on /api/uploadthing');
-      return { uploadedBy: 'user' };
+      if (!req.user || !req.user.uid || !req.user.authenticated) {
+        throw new Error('Authentication required for file upload.');
+      }
+      return { userId: req.user.uid, userEmail: req.user.email || '' };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       // Step 5 & 6: UploadThing response & File stored in UploadThing dashboard

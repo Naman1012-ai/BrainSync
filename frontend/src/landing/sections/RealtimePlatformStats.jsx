@@ -15,167 +15,25 @@ export function RealtimePlatformStats() {
   });
 
   useEffect(() => {
-    let usersCount = 0;
-    let orgsMap = {};
-    let wsMap = {};
-    let ideasMap = {};
-    let publicIdeasMap = {};
-    let votesMap = {};
-    let discussionsMap = {};
-    let tasksMap = {};
-    let blueprintsMap = {};
-    let announcementsCount = 0;
-
-    const updateStats = () => {
-      // 1. Unique Workspaces count
-      const allWsIds = new Set();
-      Object.entries(orgsMap || {}).forEach(([id, val]) => {
-        if (val && !val.isDeleted) allWsIds.add(id);
-      });
-      Object.entries(wsMap || {}).forEach(([id, val]) => {
-        if (val && !val.isDeleted) allWsIds.add(id);
-      });
-
-      // 2. Proposals count (workspace ideas + public ideas)
-      let proposalCount = 0;
-      let calculatedVotes = 0;
-
-      Object.values(ideasMap || {}).forEach((wsIdeas) => {
-        if (wsIdeas && typeof wsIdeas === 'object') {
-          Object.values(wsIdeas).forEach((idea) => {
-            if (idea && !idea.isDeleted) {
-              proposalCount++;
-              if (idea.voteCount) calculatedVotes += idea.voteCount;
-              else if (idea.upvotedBy && typeof idea.upvotedBy === 'object') {
-                calculatedVotes += Object.keys(idea.upvotedBy).length;
-              }
-            }
-          });
-        }
-      });
-
-      Object.values(publicIdeasMap || {}).forEach((idea) => {
-        if (idea && !idea.isDeleted) {
-          proposalCount++;
-          if (idea.voteCount) calculatedVotes += idea.voteCount;
-        }
-      });
-
-      // 3. Direct Votes node count
-      let directVotesCount = 0;
-      Object.values(votesMap || {}).forEach((item) => {
-        if (item && typeof item === 'object') {
-          directVotesCount += Object.keys(item).length;
-        } else if (item) {
-          directVotesCount++;
-        }
-      });
-      const totalVotes = Math.max(calculatedVotes, directVotesCount);
-
-      // 4. Comments count
-      let commentsCount = 0;
-      Object.values(discussionsMap || {}).forEach((itemMap) => {
-        if (itemMap && typeof itemMap === 'object') {
-          commentsCount += Object.keys(itemMap).length;
-        }
-      });
-
-      // 5. Tasks count
-      let tasksCount = 0;
-      Object.values(tasksMap || {}).forEach((wsTasks) => {
-        if (wsTasks && typeof wsTasks === 'object') {
-          Object.values(wsTasks).forEach((t) => {
-            if (t && !t.isDeleted) tasksCount++;
-          });
-        }
-      });
-
-      // 6. Blueprints count
-      let blueprintsCount = 0;
-      Object.values(blueprintsMap || {}).forEach((wsBp) => {
-        if (wsBp && typeof wsBp === 'object') {
-          Object.values(wsBp).forEach((bp) => {
-            if (bp && typeof bp === 'object' && (bp.blueprintId || bp.status || bp.content || bp.ideaTitle || bp.version)) {
-              blueprintsCount++;
-            }
-          });
-        }
-      });
-
-      setCounts({
-        users: usersCount,
-        workspaces: allWsIds.size,
-        proposals: proposalCount,
-        votes: totalVotes,
-        comments: commentsCount,
-        tasks: tasksCount,
-        blueprints: blueprintsCount,
-        announcements: announcementsCount,
-      });
-    };
-
-    // Subscriptions
-    const unsubUsers = rtdbService.subscribe('users', (data) => {
-      usersCount = data && typeof data === 'object' ? Object.keys(data).length : 0;
-      updateStats();
-    });
-
-    const unsubOrgs = rtdbService.subscribe('organizations', (data) => {
-      orgsMap = data || {};
-      updateStats();
-    });
-
-    const unsubWs = rtdbService.subscribe('workspaces', (data) => {
-      wsMap = data || {};
-      updateStats();
-    });
-
-    const unsubIdeas = rtdbService.subscribe('ideas', (data) => {
-      ideasMap = data || {};
-      updateStats();
-    });
-
-    const unsubPublicIdeas = rtdbService.subscribe('publicIdeas', (data) => {
-      publicIdeasMap = data || {};
-      updateStats();
-    });
-
-    const unsubVotes = rtdbService.subscribe('votes', (data) => {
-      votesMap = data || {};
-      updateStats();
-    });
-
-    const unsubDiscussions = rtdbService.subscribe('discussions', (data) => {
-      discussionsMap = data || {};
-      updateStats();
-    });
-
-    const unsubTasks = rtdbService.subscribe('tasks', (data) => {
-      tasksMap = data || {};
-      updateStats();
-    });
-
-    const unsubBlueprints = rtdbService.subscribe('blueprints', (data) => {
-      blueprintsMap = data || {};
-      updateStats();
-    });
-
-    const unsubAnnouncements = rtdbService.subscribe('announcements', (data) => {
-      announcementsCount = data && typeof data === 'object' ? Object.keys(data).length : 0;
-      updateStats();
+    // Single secure subscription to public aggregate node 'globalStats'
+    // Guarantees zero download of private user profiles, workspaces, or ideas
+    const unsubscribe = rtdbService.subscribe('globalStats', (data) => {
+      if (data && typeof data === 'object') {
+        setCounts({
+          users: Number(data.totalUsers ?? data.users) || 0,
+          workspaces: Number(data.totalWorkspaces ?? data.workspaces) || 0,
+          proposals: Number(data.totalIdeas ?? data.proposals) || 0,
+          votes: Number(data.totalVotes ?? data.votes) || 0,
+          comments: Number(data.totalComments ?? data.comments) || 0,
+          tasks: Number(data.totalTasks ?? data.tasks) || 0,
+          blueprints: Number(data.totalBlueprints ?? data.blueprints) || 0,
+          announcements: Number(data.totalAnnouncements ?? data.announcements) || 0,
+        });
+      }
     });
 
     return () => {
-      if (typeof unsubUsers === 'function') unsubUsers();
-      if (typeof unsubOrgs === 'function') unsubOrgs();
-      if (typeof unsubWs === 'function') unsubWs();
-      if (typeof unsubIdeas === 'function') unsubIdeas();
-      if (typeof unsubPublicIdeas === 'function') unsubPublicIdeas();
-      if (typeof unsubVotes === 'function') unsubVotes();
-      if (typeof unsubDiscussions === 'function') unsubDiscussions();
-      if (typeof unsubTasks === 'function') unsubTasks();
-      if (typeof unsubBlueprints === 'function') unsubBlueprints();
-      if (typeof unsubAnnouncements === 'function') unsubAnnouncements();
+      if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, []);
 

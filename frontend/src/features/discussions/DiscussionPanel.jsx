@@ -33,17 +33,22 @@ export function DiscussionPanel({ idea, onToast = () => {} }) {
   const ideaId = idea?.ideaId;
   const isIdeaOwner = user && idea && user.uid === idea.authorId;
 
+  const isPublic = Boolean(!idea?.orgId);
+
   useEffect(() => {
     if (!ideaId) return;
 
     setLoading(true);
-    const unsubscribe = discussionService.subscribeToDiscussions(ideaId, (items) => {
-      setDiscussions(items);
-      setLoading(false);
-    });
+    const unsubscribe = discussionService.subscribeToDiscussions(
+      { orgId: idea?.orgId || null, ideaId, isPublic },
+      (items) => {
+        setDiscussions(items);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
-  }, [ideaId]);
+  }, [idea?.orgId, ideaId, isPublic]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

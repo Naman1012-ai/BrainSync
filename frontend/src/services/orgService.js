@@ -256,17 +256,32 @@ export const orgService = {
           const profile = (await rtdbService.getData(`users/${uid}`)) || {};
           return {
             uid,
+            id: uid,
+            name: profile.displayName || profile.name || (profile.email ? profile.email.split('@')[0] : 'Team Member'),
             role: membersObj[uid].role || 'member',
+            workspaceRole: membersObj[uid].role || 'member',
             joinedAt: membersObj[uid].joinedAt,
             displayName: profile.displayName || 'Team Member',
             email: profile.email || '',
             onlineStatus: profile.onlineStatus || 'offline',
+            skills: profile.skills || '',
+            declaredSkills: Array.isArray(profile.skills) ? profile.skills : typeof profile.skills === 'string' ? profile.skills.split(',').map((s) => s.trim()).filter(Boolean) : [],
+            techStack: profile.techStack || '',
+            preferredTechStack: profile.techStack || '',
+            interests: profile.interests || '',
           };
         })
       );
 
       callback(memberProfiles);
     });
+  },
+
+  /**
+   * Alias for subscribeToOrgMembers.
+   */
+  subscribeToMembers: (orgId, callback) => {
+    return orgService.subscribeToOrgMembers(orgId, callback);
   },
 
   /**
@@ -344,11 +359,17 @@ export const orgService = {
           const profile = (await rtdbService.getData(`users/${uid}`)) || {};
           return {
             uid,
+            id: uid,
+            name: profile.displayName || profile.name || (profile.email ? profile.email.split('@')[0] : 'Team Member'),
             role: membersObj[uid].role || 'member',
+            workspaceRole: membersObj[uid].role || 'member',
             joinedAt: membersObj[uid].joinedAt,
             displayName: profile.displayName || 'Team Member',
             email: profile.email || '',
             onlineStatus: profile.onlineStatus || 'offline',
+            skills: profile.skills || '',
+            declaredSkills: Array.isArray(profile.skills) ? profile.skills : typeof profile.skills === 'string' ? profile.skills.split(',').map((s) => s.trim()).filter(Boolean) : [],
+            techStack: profile.techStack || '',
           };
         })
       );

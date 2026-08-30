@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { rtdbService } from '../../services/rtdbService';
+import React from 'react';
 import { Briefcase, Zap, Activity, Clock, CheckCircle, ArrowRight } from 'lucide-react';
 
 const RECENT_ACTIVITIES = [

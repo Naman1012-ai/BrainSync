@@ -14,6 +14,7 @@ import { IdeaList } from '../../features/ideas/IdeaList';
 import { CreateIdeaModal } from '../../features/ideas/CreateIdeaModal';
 import { ErrorBoundary } from '../../components/feedback/ErrorBoundary';
 import { formatTimestamp } from '../../utils/formatting';
+import { safeText } from '../../utils/safeRender';
 import {
   Lightbulb,
   Plus,
@@ -114,7 +115,7 @@ function IdeaBoardContent() {
           </div>
           <div className="flex items-baseline justify-between">
             <h3 className="text-sm font-black text-slate-900 truncate max-w-[140px]">
-              {selectedMvp ? selectedMvp.title : 'Pending Selection'}
+              {selectedMvp ? safeText(selectedMvp.title, 'Winning MVP') : 'Pending Selection'}
             </h3>
             <Badge variant={selectedMvp ? 'success' : 'default'} className="text-[9px] uppercase font-bold">
               {selectedMvp ? 'Selected' : 'Voting'}
@@ -151,21 +152,21 @@ function IdeaBoardContent() {
                   <Trophy className="h-3.5 w-3.5" /> Workspace Winning MVP
                 </Badge>
                 <Badge variant="info" className="bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
-                  {selectedMvp.difficultyLevel || 'Medium'} Build
+                  {safeText(selectedMvp.difficultyLevel, 'Medium')} Build
                 </Badge>
                 <span className="text-xs font-mono text-indigo-300 font-bold">
                   👍 {selectedMvp.voteCount || 0} Votes
                 </span>
               </div>
 
-              <h2 className="text-2xl font-black text-white tracking-tight">{selectedMvp.title}</h2>
+              <h2 className="text-2xl font-black text-white tracking-tight">{safeText(selectedMvp.title)}</h2>
               <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed font-medium">
-                {selectedMvp.problemStatement}
+                {safeText(selectedMvp.problemStatement)}
               </p>
 
               <div className="flex items-center gap-2 text-xs text-slate-400 pt-1">
-                <Avatar name={selectedMvp.authorName || 'Collaborator'} size="xs" />
-                <span>Proposed by <strong className="text-white">{selectedMvp.authorName || 'Team Member'}</strong></span>
+                <Avatar name={safeText(selectedMvp.authorName, 'Collaborator')} size="xs" />
+                <span>Proposed by <strong className="text-white">{safeText(selectedMvp.authorName, 'Team Member')}</strong></span>
               </div>
             </div>
 

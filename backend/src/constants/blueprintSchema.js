@@ -1,0 +1,775 @@
+/**
+ * Canonical Blueprint 2.0 Schema Constants, Enums & Default Structures.
+ * Defines authoritative constants shared across backend services, validators, and AI boundaries.
+ */
+
+export const SCHEMA_VERSIONS = {
+  LEGACY_V1: 1,
+  CANONICAL_V2: 2,
+  CURRENT: 2,
+};
+
+export const AUTHORITY_LEVELS = {
+  AI_PROPOSED: 'AI_PROPOSED',
+  APPLICATION_CONTROLLED: 'APPLICATION_CONTROLLED',
+  USER_CONTROLLED: 'USER_CONTROLLED',
+};
+
+export const BLUEPRINT_STATUSES = {
+  NOT_CREATED: 'not_created',
+  DRAFT: 'draft',
+  GENERATING: 'generating',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+  STALE: 'stale',
+  SUPERSEDED: 'superseded',
+  ARCHIVED: 'archived',
+};
+
+export const BLUEPRINT_LIFECYCLE_STATES = {
+  DRAFT: 'draft',
+  GENERATING: 'generating',
+  VALIDATING: 'validating',
+  READY_FOR_REVIEW: 'ready_for_review',
+  READY: 'ready',
+  APPROVED: 'approved',
+  ACTIVE: 'active',
+  STALE: 'stale',
+  SUPERSEDED: 'superseded',
+  FAILED: 'failed',
+  ARCHIVED: 'archived',
+};
+
+export const APPROVAL_STATUSES = {
+  DRAFT: 'draft',
+  PENDING_APPROVAL: 'pending_approval',
+  PENDING: 'pending_approval',
+  READY_FOR_REVIEW: 'ready_for_review',
+  APPROVED: 'approved',
+  SUPERSEDED: 'superseded',
+  REJECTED: 'rejected',
+};
+
+export const STALENESS_IMPACT_LEVELS = {
+  NO_IMPACT: 'NO_IMPACT',
+  LOW_IMPACT: 'LOW_IMPACT',
+  MEDIUM_IMPACT: 'MEDIUM_IMPACT',
+  HIGH_IMPACT: 'HIGH_IMPACT',
+  CRITICAL: 'CRITICAL',
+};
+
+export const REQUIREMENT_TYPES = [
+  'functional',
+  'nonFunctional',
+  'technical',
+  'security',
+  'performance',
+  'business',
+];
+
+export const PRIORITY_LEVELS = [
+  'Critical',
+  'Must Have',
+  'Should Have',
+  'Nice to Have',
+  'Low',
+];
+
+export const TASK_CATEGORIES = [
+  'setup',
+  'frontend',
+  'backend',
+  'database',
+  'api',
+  'security',
+  'testing',
+  'devops',
+  'deployment',
+  'documentation',
+  'design',
+  'research',
+  'infrastructure',
+  'qa',
+  'general',
+];
+
+export const TASK_STATUSES = [
+  'Todo',
+  'In Progress',
+  'Review',
+  'Completed',
+  'Blocked',
+];
+
+export const DEPENDENCY_TYPES = [
+  'blocks',
+  'blockedBy',
+  'dependsOn',
+  'relatedTo',
+];
+
+export const RISK_CATEGORIES = [
+  'technical',
+  'security',
+  'dependency',
+  'operational',
+  'schedule',
+  'product',
+];
+
+export const SEVERITY_LEVELS = [
+  'Critical',
+  'High',
+  'Medium',
+  'Low',
+];
+
+export const DECISION_CATEGORIES = [
+  'product',
+  'scope',
+  'requirement',
+  'architecture',
+  'technology',
+  'database',
+  'security',
+  'ux',
+  'workflow',
+  'team',
+  'timeline',
+  'testing',
+  'deployment',
+  'operations',
+  'hosting',
+];
+
+export const DECISION_STATUSES = [
+  'proposed',
+  'under_review',
+  'approved',
+  'rejected',
+  'superseded',
+  'reverted',
+];
+
+export const QUESTION_STATUSES = [
+  'open',
+  'answered',
+  'resolved',
+  'dismissed',
+];
+
+export const QUESTION_CATEGORIES = [
+  'informational',
+  'implementation',
+  'requirement',
+  'architecture',
+  'decision_blocking',
+  'execution_blocking',
+];
+
+export const SUGGESTION_STATUSES = [
+  'proposed',
+  'under_review',
+  'accepted',
+  'rejected',
+  'superseded',
+  'implemented',
+];
+
+export const CHANGE_RECOMMENDATION_STATUSES = [
+  'proposed',
+  'approved',
+  'rejected',
+  'applied',
+  'stale',
+];
+
+export const CHANGE_TARGET_TYPES = [
+  'requirement',
+  'feature',
+  'task',
+  'dependency',
+  'milestone',
+  'risk',
+  'test',
+  'architecture',
+];
+
+export const CHANGE_TYPES = [
+  'create',
+  'modify',
+  'remove',
+  'clarify',
+  'invalidate',
+];
+
+export const AI_RECOMMENDATION_CATEGORIES = [
+  'architecture',
+  'product',
+  'performance',
+  'security',
+  'workflow',
+  'team',
+  'scalability',
+  'futureEnhancement',
+];
+
+export const READINESS_LEVELS = [
+  'Ready for Development',
+  'Needs Refinement',
+  'Incomplete Concept',
+];
+
+/**
+ * Creates default canonical empty/fallback Blueprint 2.0 content structure.
+ */
+export function createDefaultBlueprint2Content(ideaTitle = 'Project', problemStatement = '') {
+  return {
+    schemaVersion: SCHEMA_VERSIONS.CANONICAL_V2,
+    projectUnderstanding: {
+      summary: `Comprehensive technical execution blueprint for ${ideaTitle}.`,
+      vision: 'Build, iterate, and deploy a production-grade MVP within the sprint lifecycle.',
+      problemStatement: problemStatement || 'Problem statement to be addressed.',
+      targetAudience: 'Developers, project stakeholders, and end users.',
+      proposedSolution: 'Modular web architecture with real-time state synchronization.',
+      valueProposition: 'Accelerates execution through structured task decomposition and dependency management.',
+      mvpScope: {
+        inScope: ['Core feature workflow', 'Authentication & authorization', 'Database persistence', 'Real-time updates'],
+        outOfScope: ['Enterprise analytics', 'Multi-region clustering', 'Advanced billing automation'],
+        successCriteria: ['Functional MVP deployment', 'Zero blocking security vulnerabilities', 'All Must-Have features verified'],
+      },
+      assumptions: ['Cloud database infrastructure is operational', 'Team members have access to Git repository'],
+      constraints: ['Sprint timeline adherence', 'Client-side performance budgets'],
+    },
+    requirements: [
+      {
+        id: 'REQ-01',
+        title: 'Core Workflow Execution',
+        description: 'Users can interact with primary domain entities seamlessly.',
+        type: 'functional',
+        priority: 'Must Have',
+        source: 'ai_inferred',
+        status: 'proposed',
+        category: 'core',
+      },
+      {
+        id: 'REQ-02',
+        title: 'Real-time State Synchronization',
+        description: 'State mutations reflect across active client sessions in under 500ms.',
+        type: 'performance',
+        priority: 'Must Have',
+        source: 'ai_inferred',
+        status: 'proposed',
+        category: 'infrastructure',
+      },
+      {
+        id: 'REQ-03',
+        title: 'Role-Based Access Control',
+        description: 'Only authorized workspace members can mutate project state.',
+        type: 'security',
+        priority: 'Critical',
+        source: 'ai_inferred',
+        status: 'proposed',
+        category: 'security',
+      },
+    ],
+    architecture: {
+      architecturePattern: 'Client-Server Realtime Architecture',
+      components: ['React Single Page Application', 'Node.js/Express REST API Service', 'Firebase Realtime Database'],
+      dataFlowDescription: 'Client issues mutations via authenticated REST endpoints; state updates stream reactively to connected peers via WebSocket listener connections.',
+      technologyStack: {
+        frontend: ['React 19', 'Tailwind CSS', 'Vite'],
+        backend: ['Node.js', 'Express'],
+        database: ['Firebase Realtime Database'],
+        hosting: ['Vercel', 'Render'],
+        thirdPartyApis: [],
+        evaluationReason: 'Optimized for rapid hackathon build velocity, instantaneous live sync, and serverless scalability.',
+      },
+      decisions: [
+        {
+          id: 'ADR-01',
+          category: 'architecture',
+          decision: 'Adopt single-page client with managed real-time persistence layer.',
+          rationale: 'Minimizes backend maintenance overhead and guarantees reactive synchronization.',
+          alternatives: ['GraphQL Subscriptions', 'Custom WebSocket Server'],
+          tradeOffs: 'Database queries must be structured around denormalized trees.',
+          consequences: 'Requires disciplined client-side indexing and clean listener disposal.',
+          confidence: 'high',
+          source: 'ai_recommended',
+        },
+      ],
+      dataArchitecture: {
+        primaryDatabase: 'Firebase Realtime Database',
+        entities: [
+          {
+            entityName: 'Users',
+            entityType: 'Necessary Entity',
+            isOptional: false,
+            description: 'User identity and membership records.',
+            fields: ['uid', 'email', 'displayName', 'createdAt'],
+            optionalFields: ['avatarUrl', 'skills'],
+          },
+          {
+            entityName: 'Workspaces',
+            entityType: 'Necessary Entity',
+            isOptional: false,
+            description: 'Workspace tenancy and active project context.',
+            fields: ['workspaceId', 'name', 'ownerId', 'createdAt'],
+            optionalFields: ['settings', 'activeProjectId'],
+          },
+        ],
+      },
+    },
+    execution: {
+      features: [
+        {
+          id: 'FEAT-01',
+          name: 'Core Domain Engine',
+          description: 'Primary interaction module delivering core business logic.',
+          priority: 'Must Have',
+          status: 'planned',
+          requirementIds: ['REQ-01'],
+          acceptanceCriteriaIds: ['AC-01'],
+          taskIds: ['TASK-01'],
+        },
+        {
+          id: 'FEAT-02',
+          name: 'Realtime Sync Bridge',
+          description: 'Live state subscription and conflict resolution handler.',
+          priority: 'Must Have',
+          status: 'planned',
+          requirementIds: ['REQ-02'],
+          acceptanceCriteriaIds: ['AC-02'],
+          taskIds: ['TASK-02'],
+        },
+      ],
+      workflow: [
+        {
+          id: 'WF-01',
+          stepNumber: 1,
+          stepName: 'Authentication & Session Init',
+          description: 'User signs in, validates token, and loads workspace metadata.',
+          input: 'User credentials',
+          output: 'Authenticated session & workspace context',
+          featureIds: ['FEAT-01'],
+          taskIds: ['TASK-01'],
+          dependencyStepIds: [],
+        },
+        {
+          id: 'WF-02',
+          stepNumber: 2,
+          stepName: 'Domain Interaction & Sync',
+          description: 'User interacts with domain actions; changes broadcast in real time.',
+          input: 'User action payload',
+          output: 'Persisted mutation & websocket broadcast',
+          featureIds: ['FEAT-01', 'FEAT-02'],
+          taskIds: ['TASK-02'],
+          dependencyStepIds: ['WF-01'],
+        },
+      ],
+      roles: [
+        {
+          id: 'ROLE-01',
+          roleName: 'Full-Stack Lead Architect',
+          responsibility: 'Coordinates system architecture, API schemas, and integration points.',
+          capabilityRequirements: ['Node.js', 'Express', 'React', 'Database Design'],
+          recommendedUserId: null,
+          recommendedUserName: null,
+          assignmentStatus: 'recommended',
+          assignmentNote: 'Strategic recommendation based on project requirements. Skills to be verified.',
+          taskIds: ['TASK-01', 'TASK-02'],
+        },
+      ],
+      tasks: [
+        {
+          id: 'TASK-01',
+          title: 'Initialize Core Domain Models & Schemas',
+          description: 'Define entity contracts and initialize database security rules.',
+          category: 'backend',
+          priority: 'Critical',
+          status: 'Todo',
+          featureId: 'FEAT-01',
+          requirementIds: ['REQ-01'],
+          workflowStepId: 'WF-01',
+          recommendedRoleId: 'ROLE-01',
+          assignedUserId: null,
+          assignedUserName: null,
+          dependencyIds: [],
+          acceptanceCriteriaIds: ['AC-01'],
+          requiredCapabilities: [
+            { skill: 'Node.js', minimumProficiency: 'intermediate', importance: 'required' },
+            { skill: 'Database Design', minimumProficiency: 'intermediate', importance: 'required' },
+          ],
+          estimatedEffortHours: 4,
+          milestoneId: 'MILE-01',
+          source: 'ai_proposed',
+          isConvertedToTask: false,
+          convertedTaskId: null,
+        },
+        {
+          id: 'TASK-02',
+          title: 'Implement Real-time Synchronization Listeners',
+          description: 'Connect client WebSocket listeners to RTDB node changes.',
+          category: 'frontend',
+          priority: 'High',
+          status: 'Todo',
+          featureId: 'FEAT-02',
+          requirementIds: ['REQ-02'],
+          workflowStepId: 'WF-02',
+          recommendedRoleId: 'ROLE-01',
+          assignedUserId: null,
+          assignedUserName: null,
+          dependencyIds: ['TASK-01'],
+          acceptanceCriteriaIds: ['AC-02'],
+          requiredCapabilities: [
+            { skill: 'React', minimumProficiency: 'intermediate', importance: 'required' },
+            { skill: 'WebSocket', minimumProficiency: 'intermediate', importance: 'preferred' },
+          ],
+          estimatedEffortHours: 6,
+          milestoneId: 'MILE-01',
+          source: 'ai_proposed',
+          isConvertedToTask: false,
+          convertedTaskId: null,
+        },
+      ],
+      dependencies: [
+        {
+          id: 'DEP-01',
+          sourceTaskId: 'TASK-01',
+          targetTaskId: 'TASK-02',
+          type: 'blocks',
+          reason: 'Domain model schema and security rules must be defined before frontend sync listeners can be established.',
+        },
+      ],
+      timeline: {
+        planningAssumptions: [
+          'Team members have core familiarity with target tech stack.',
+          'Database and cloud project credentials are provisioned in Sprint 1.',
+        ],
+        estimatedDuration: '2 Sprints (4 Weeks)',
+        milestones: [
+          {
+            id: 'MILE-01',
+            name: 'Phase 1: Foundation & Realtime Sync',
+            description: 'Establish core domain schemas and end-to-end sync infrastructure.',
+            order: 1,
+            duration: 'Sprint 1',
+            deliverables: ['Schema contracts', 'RTDB security rules', 'Client sync listener'],
+            taskIds: ['TASK-01', 'TASK-02'],
+            status: 'planned',
+          },
+          {
+            id: 'MILE-02',
+            name: 'Sprint 2: UI Polish, Quality & Deployment',
+            description: 'UI refinement, error boundary verification, and production release.',
+            order: 2,
+            duration: 'Sprint 2 (Week 2)',
+            deliverables: ['Responsive UI', 'Error handling', 'Production deployment'],
+            taskIds: [],
+            status: 'planned',
+          },
+        ],
+        criticalPathTaskIds: ['TASK-01', 'TASK-02'],
+      },
+      teamExecutionSummary: {
+        workloadConcentration: [],
+        capabilityGaps: [],
+        uncoveredRoles: [],
+        unassignedCriticalTasksCount: 0,
+        teamCoveragePercentage: 100,
+        strategicAdvice: [],
+      },
+    },
+    quality: {
+      acceptanceCriteria: [
+        {
+          id: 'AC-01',
+          description: 'Database entity validation passes all schema integrity checks.',
+          type: 'technical',
+          status: 'pending',
+          relatedTaskId: 'TASK-01',
+          relatedFeatureId: 'FEAT-01',
+        },
+        {
+          id: 'AC-02',
+          description: 'Client UI updates automatically when state is mutated from another session.',
+          type: 'functional',
+          status: 'pending',
+          relatedTaskId: 'TASK-02',
+          relatedFeatureId: 'FEAT-02',
+        },
+      ],
+      testingStrategy: {
+        overview: 'Tiered testing focusing on schema validation, API route integration, and optimistic UI updates.',
+        unitTesting: { enabled: true, scope: 'Validators, data normalization, utility helpers', tools: ['Node test runner', 'ESLint'] },
+        integrationTesting: { enabled: true, scope: 'API endpoints, RTDB query handlers', tools: ['Supertest'] },
+        apiTesting: { enabled: true, scope: 'REST endpoints status codes & error formats', tools: ['Fetch API'] },
+        uiTesting: { enabled: true, scope: 'Component rendering and reactive states', tools: ['React Testing'] },
+        securityTesting: { enabled: true, scope: 'Auth token validation, XSS prevention, RTDB rules', tools: ['Security Audit'] },
+        performanceTesting: { enabled: true, scope: 'Realtime listener latency and payload sizes', tools: ['Lighthouse'] },
+        e2eTesting: { enabled: false, scope: 'Deferred to post-MVP', tools: [] },
+        testCases: [
+          {
+            id: 'TC-01',
+            title: 'Verify entity schema serialization and error boundaries',
+            category: 'unit',
+            description: 'Execute unit test runner verifying data normalization and required key validation.',
+            relatedRequirementIds: ['REQ-01'],
+            relatedFeatureIds: ['FEAT-01'],
+            relatedTaskIds: ['TASK-01'],
+            targetVerification: 'Returns normalized JSON structure and throws formatted errors on missing keys.',
+            status: 'planned',
+          },
+          {
+            id: 'TC-02',
+            title: 'Verify optimistic state updates on concurrent mutation',
+            category: 'integration',
+            description: 'Trigger state mutation and assert real-time listener broadcast across sessions.',
+            relatedRequirementIds: ['REQ-02'],
+            relatedFeatureIds: ['FEAT-02'],
+            relatedTaskIds: ['TASK-02'],
+            targetVerification: 'UI reflects new state within 100ms and gracefully rolls back on failure.',
+            status: 'planned',
+          },
+        ],
+        testCoverageSummary: {
+          totalRequirementsCount: 2,
+          coveredRequirementsCount: 2,
+          requirementCoveragePercentage: 100,
+          totalFeaturesCount: 2,
+          coveredFeaturesCount: 2,
+          featureCoveragePercentage: 100,
+          uncoveredCriticalRequirements: [],
+          uncoveredCriticalFeatures: [],
+        },
+      },
+      risks: [
+        {
+          id: 'RISK-01',
+          title: 'Real-time State Synchronization Latency',
+          description: 'Network fluctuations may delay WebSocket events across concurrent client sessions.',
+          category: 'technical',
+          likelihood: 'Medium',
+          impact: 'Medium',
+          severity: 'Medium',
+          mitigation: 'Implement optimistic UI state updates and automatic reconnection handlers.',
+          contingency: 'Fallback to polling refresh on connection drop.',
+          affectedFeatureIds: ['FEAT-02'],
+          affectedTaskIds: ['TASK-02'],
+          affectedRequirementIds: ['REQ-02'],
+          ownerRoleId: 'ROLE-01',
+          ownerUserId: null,
+          status: 'identified',
+          source: 'ai_proposed',
+        },
+      ],
+      qualityGates: [
+        {
+          id: 'GATE-01',
+          name: 'Requirements & Scope Alignment',
+          stage: 1,
+          description: 'Functional requirements, constraints, and MVP boundaries are defined and unambiguous.',
+          status: 'passed',
+          requiredEvidence: ['Project vision and problem statement validated', 'MVP scope boundaries defined'],
+          actualEvidence: ['Canonical requirements and scope verified in Blueprint contract.'],
+          blockers: [],
+          warnings: [],
+          isAutomated: true,
+          verifiedAt: Date.now(),
+          verifiedBy: 'system',
+        },
+        {
+          id: 'GATE-02',
+          name: 'Technical Architecture & DB Validation',
+          stage: 2,
+          description: 'Target database, entity relationships, and architectural decision records are validated.',
+          status: 'passed',
+          requiredEvidence: ['Primary database selected', 'Entity schemas defined', 'Architecture decisions recorded'],
+          actualEvidence: ['Architecture pattern and database entity schema confirmed.'],
+          blockers: [],
+          warnings: [],
+          isAutomated: true,
+          verifiedAt: Date.now(),
+          verifiedBy: 'system',
+        },
+        {
+          id: 'GATE-03',
+          name: 'Execution Plan & Critical Path Alignment',
+          stage: 3,
+          description: 'Tasks, dependencies, cycle-free DAG, and critical path timeline are formulated.',
+          status: 'in_progress',
+          requiredEvidence: ['Cycle-free dependency graph', 'Critical path tasks identified', 'Effort hours estimated'],
+          actualEvidence: ['Topological execution waves and critical path derived.'],
+          blockers: [],
+          warnings: [],
+          isAutomated: true,
+          verifiedAt: Date.now(),
+          verifiedBy: 'system',
+        },
+        {
+          id: 'GATE-04',
+          name: 'Team Capability & Workload Balance',
+          stage: 4,
+          description: 'Required skills are matched against verified member profiles with no extreme workload bottlenecks.',
+          status: 'in_progress',
+          requiredEvidence: ['Required skills identified', 'Task assignment recommendations calculated'],
+          actualEvidence: ['Team capability matching and workload allocation analyzed.'],
+          blockers: [],
+          warnings: [],
+          isAutomated: true,
+          verifiedAt: Date.now(),
+          verifiedBy: 'system',
+        },
+        {
+          id: 'GATE-05',
+          name: 'Acceptance Criteria Verification',
+          stage: 5,
+          description: 'Acceptance criteria defined for all critical features and verified before completion.',
+          status: 'not_started',
+          requiredEvidence: ['Acceptance criteria mapped to critical tasks', 'Criteria validation tests conducted'],
+          actualEvidence: [],
+          blockers: ['Acceptance criteria verification pending implementation.'],
+          warnings: [],
+          isAutomated: false,
+          verifiedAt: null,
+          verifiedBy: null,
+        },
+        {
+          id: 'GATE-06',
+          name: 'Automated & Manual Testing Verification',
+          stage: 6,
+          description: 'Unit, integration, and security test suites executed with passing assertions.',
+          status: 'not_started',
+          requiredEvidence: ['Automated test suite passing in CI/CD', 'Core user flow smoke tests verified'],
+          actualEvidence: [],
+          blockers: ['Automated integration tests pending development execution.'],
+          warnings: [],
+          isAutomated: true,
+          verifiedAt: null,
+          verifiedBy: null,
+        },
+        {
+          id: 'GATE-07',
+          name: 'Security Hardening Review',
+          stage: 7,
+          description: 'Authentication boundaries, workspace isolation, and input sanitization verified.',
+          status: 'not_started',
+          requiredEvidence: ['Token authentication validated on all endpoints', 'Database security rules verified'],
+          actualEvidence: [],
+          blockers: ['Security audit and token boundary inspection pending pre-deployment review.'],
+          warnings: [],
+          isAutomated: false,
+          verifiedAt: null,
+          verifiedBy: null,
+        },
+        {
+          id: 'GATE-08',
+          name: 'Production & Deployment Readiness',
+          stage: 8,
+          description: 'Production build clean, environment variables configured, and health checks responding.',
+          status: 'not_started',
+          requiredEvidence: ['Production build succeeds with zero errors', 'Environment variables set', 'Rollback plan established'],
+          actualEvidence: [],
+          blockers: ['Production deployment prerequisites pending build and host validation.'],
+          warnings: [],
+          isAutomated: false,
+          verifiedAt: null,
+          verifiedBy: null,
+        },
+      ],
+      definitionOfDone: {
+        developmentComplete: [
+          'Code written, formatted, and free of syntax/linter errors',
+          'Feature branch reviewed and merged to main',
+        ],
+        testingCriteria: [
+          'All unit and integration validation checks pass',
+          'Zero unhandled console errors during standard user flows',
+        ],
+        securityChecks: [
+          'All API endpoints verify authentication credentials',
+          'Untrusted input sanitized before rendering or AI forwarding',
+        ],
+        deploymentReadiness: [
+          'Application builds cleanly in production mode with zero errors',
+          'Environment variables properly configured in host environment',
+        ],
+        documentation: [
+          'Updated API routes and schema documentation committed',
+        ],
+        operationalReadiness: [
+          'Stale generation recovery and error boundaries verified',
+        ],
+      },
+      readiness: {
+        score: 85,
+        level: 'Ready for Development',
+        gaps: [],
+      },
+      productionReadiness: {
+        overallStatus: 'partially_ready',
+        readinessScore: 70,
+        derivedLevel: 'Ready for Development',
+        categorySummaries: {
+          requirements: { status: 'passed', summary: 'Requirements established.' },
+          architecture: { status: 'passed', summary: 'Database schema established.' },
+          execution: { status: 'partial', summary: 'Execution plan formulated.' },
+          testing: { status: 'partial', summary: 'Test strategy planned.' },
+          security: { status: 'unknown', summary: 'Pre-deployment audit pending.' },
+          deployment: { status: 'unknown', summary: 'Production host pending.' },
+          operations: { status: 'unknown', summary: 'Monitoring pending.' },
+        },
+        blockers: [],
+        warnings: ['Execution in progress: 0/2 tasks completed.'],
+        passedChecks: ['Requirements: 2 requirements defined.', 'Architecture: System design established.'],
+        unknownChecks: ['Security hardening: Audit pending.', 'Deployment readiness: Live hosting pending.'],
+      },
+    },
+    intelligence: {
+      discussionIntelligence: {
+        summary: 'No community discussions or feedback submitted yet for this MVP.',
+        keyThemes: [],
+        conflicts: [],
+        decisions: [],
+        acceptedSuggestions: [],
+        rejectedSuggestions: [],
+        unresolvedQuestions: [],
+        importantComments: [],
+        changeRecommendations: [],
+        statistics: {
+          totalDiscussions: 0,
+          suggestionsCount: 0,
+          questionsCount: 0,
+          commentsCount: 0,
+          decisionsCount: 0,
+          approvedDecisionsCount: 0,
+          openQuestionsCount: 0,
+          blockingQuestionsCount: 0,
+          pendingChangeRecommendationsCount: 0,
+        },
+      },
+      recommendations: [
+        {
+          id: 'REC-01',
+          title: 'Implement Structured Schema Contracts Early',
+          description: 'Adhering to strict canonical entity IDs ensures seamless downstream Task Board integration.',
+          rationale: 'Reduces technical debt when transitioning from blueprint ideation to active sprint execution.',
+          category: 'architecture',
+          confidence: 'high',
+          impact: 'high',
+          status: 'proposed',
+        },
+      ],
+      futureBacklog: [
+        {
+          id: 'BACK-01',
+          title: 'Automated CI/CD Pipeline Integration',
+          description: 'Deploy automated test suites and preview environments on pull request creation.',
+          reason: 'Improves team delivery velocity once MVP baseline is established.',
+          priority: 'Medium',
+          relatedFeatureIds: ['FEAT-01'],
+        },
+      ],
+    },
+  };
+}

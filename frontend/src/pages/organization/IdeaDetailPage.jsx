@@ -14,6 +14,7 @@ import { NotificationService } from '../../services/notificationService';
 import { DiscussionPanel } from '../../features/discussions/DiscussionPanel';
 import { PublicIdeaDetailModal } from '../../features/ideas/PublicIdeaDetailModal';
 import { formatTimestamp } from '../../utils/formatting';
+import { safeText } from '../../utils/safeRender';
 import {
   ArrowLeft,
   ThumbsUp,
@@ -275,7 +276,7 @@ export default function IdeaDetailPage() {
               Problem Statement
             </h2>
             <p className="text-base text-slate-800 leading-relaxed whitespace-pre-wrap">
-              {idea.problemStatement}
+              {safeText(idea.problemStatement)}
             </p>
           </div>
 
@@ -285,7 +286,7 @@ export default function IdeaDetailPage() {
                 Proposed Technical Solution
               </h2>
               <p className="text-base text-slate-800 leading-relaxed whitespace-pre-wrap">
-                {idea.proposedSolution}
+                {safeText(idea.proposedSolution)}
               </p>
             </div>
           )}
@@ -296,18 +297,19 @@ export default function IdeaDetailPage() {
                 Tech Stack & Libraries
               </h2>
               <div className="flex flex-wrap gap-1.5">
-                {idea.techStack
-                  .split(',')
-                  .map((tech) => tech.trim())
-                  .filter(Boolean)
-                  .map((tech, i) => (
-                    <span
-                      key={i}
-                      className="rounded-md bg-slate-100 px-3 py-1 text-xs font-mono font-medium text-slate-700"
-                    >
-                      {tech}
-                    </span>
-                  ))}
+                {(typeof idea.techStack === 'string'
+                  ? idea.techStack.split(',').map((tech) => tech.trim()).filter(Boolean)
+                  : Array.isArray(idea.techStack)
+                  ? idea.techStack
+                  : Object.values(idea.techStack).flat()
+                ).map((tech, i) => (
+                  <span
+                    key={i}
+                    className="rounded-md bg-slate-100 px-3 py-1 text-xs font-mono font-medium text-slate-700"
+                  >
+                    {safeText(tech)}
+                  </span>
+                ))}
               </div>
             </div>
           )}

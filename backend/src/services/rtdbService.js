@@ -1,5 +1,6 @@
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
+import { getAuth } from 'firebase-admin/auth';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -86,20 +87,54 @@ function getDbInstance() {
 }
 
 /**
+ * Recursively sanitizes any payload before writing to Firebase Realtime Database.
+ * - Removes keys with `undefined` values from objects (Firebase RTDB throws on undefined).
+ * - Recursively processes nested objects and arrays.
+ * - Replaces `undefined` elements within arrays with `null` to avoid sparse holes.
+ * - Preserves explicit `null`, boolean `false`, number `0`, and empty strings `""`.
+ * - Does not mutate the input argument.
+ */
+export function sanitizeForRtdb(data) {
+  if (data === undefined) {
+    return undefined;
+  }
+  if (data === null || typeof data !== 'object') {
+    return data;
+  }
+  if (Array.isArray(data)) {
+    return data.map((item) => {
+      const sanitized = sanitizeForRtdb(item);
+      return sanitized === undefined ? null : sanitized;
+    });
+  }
+  const cleanObj = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== undefined) {
+      const sanitized = sanitizeForRtdb(value);
+      if (sanitized !== undefined) {
+        cleanObj[key] = sanitized;
+      }
+    }
+  }
+  return cleanObj;
+}
+
+/**
  * Server-side Firebase Realtime Database Service.
  * Uses Firebase Admin SDK for authenticated, rule-bypassing database access.
  */
 export const rtdbService = {
   getData: async (path) => {
     try {
-      const cleanPath = path.replace(/^\/|\/$/g, '');
+      const cleanPath = String(path || '').replace(/^\/|\/$/g, '');
       const instance = getDbInstance();
       if (instance) {
-        const snapshot = await instance.ref(cleanPath).once('value');
+        const ref = cleanPath ? instance.ref(cleanPath) : instance.ref();
+        const snapshot = await ref.once('value');
         return snapshot.val();
       }
       // Fallback REST request
-      const url = `${databaseURL}/${cleanPath}.json`;
+      const url = cleanPath ? `${databaseURL}/${cleanPath}.json` : `${databaseURL}/.json`;
       const res = await fetch(url);
       if (!res.ok) return null;
       return await res.json();
@@ -111,17 +146,19 @@ export const rtdbService = {
 
   setData: async (path, data) => {
     try {
-      const cleanPath = path.replace(/^\/|\/$/g, '');
+      const cleanPath = String(path || '').replace(/^\/|\/$/g, '');
+      const sanitizedData = sanitizeForRtdb(data);
       const instance = getDbInstance();
       if (instance) {
-        await instance.ref(cleanPath).set(data);
+        const ref = cleanPath ? instance.ref(cleanPath) : instance.ref();
+        await ref.set(sanitizedData);
         return true;
       }
-      const url = `${databaseURL}/${cleanPath}.json`;
+      const url = cleanPath ? `${databaseURL}/${cleanPath}.json` : `${databaseURL}/.json`;
       const res = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(sanitizedData),
       });
       return res.ok;
     } catch (err) {
@@ -132,17 +169,33 @@ export const rtdbService = {
 
   updateData: async (path, updates) => {
     try {
-      const cleanPath = path.replace(/^\/|\/$/g, '');
+      const cleanPath = String(path || '').replace(/^\/|\/$/g, '');
+      if (!updates || typeof updates !== 'object') {
+        throw new Error('Updates payload must be a non-null object.');
+      }
+
+      // Strict validation for update keys to catch empty paths and [object Object] before reaching Firebase
+      for (const key of Object.keys(updates)) {
+        if (typeof key !== 'string' || key.trim() === '') {
+          throw new Error(`Invalid RTDB update key: empty string or non-string key detected in updateData('${path}').`);
+        }
+        if (key.includes('[object Object]')) {
+          throw new Error(`Invalid RTDB update key: '[object Object]' detected in path '${key}'.`);
+        }
+      }
+
+      const sanitizedUpdates = sanitizeForRtdb(updates);
       const instance = getDbInstance();
       if (instance) {
-        await instance.ref(cleanPath).update(updates);
+        const ref = cleanPath ? instance.ref(cleanPath) : instance.ref();
+        await ref.update(sanitizedUpdates);
         return true;
       }
-      const url = `${databaseURL}/${cleanPath}.json`;
+      const url = cleanPath ? `${databaseURL}/${cleanPath}.json` : `${databaseURL}/.json`;
       const res = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(sanitizedUpdates),
       });
       return res.ok;
     } catch (err) {
@@ -153,13 +206,14 @@ export const rtdbService = {
 
   removeData: async (path) => {
     try {
-      const cleanPath = path.replace(/^\/|\/$/g, '');
+      const cleanPath = String(path || '').replace(/^\/|\/$/g, '');
       const instance = getDbInstance();
       if (instance) {
-        await instance.ref(cleanPath).remove();
+        const ref = cleanPath ? instance.ref(cleanPath) : instance.ref();
+        await ref.remove();
         return true;
       }
-      const url = `${databaseURL}/${cleanPath}.json`;
+      const url = cleanPath ? `${databaseURL}/${cleanPath}.json` : `${databaseURL}/.json`;
       const res = await fetch(url, { method: 'DELETE' });
       return res.ok;
     } catch (err) {
@@ -168,3 +222,27 @@ export const rtdbService = {
     }
   },
 };
+
+/**
+ * Retrieves the initialized Firebase Admin App instance.
+ */
+export function getFirebaseAdminApp() {
+  getDbInstance();
+  const existingApps = getApps();
+  return existingApps.length > 0 ? existingApps[0] : null;
+}
+
+/**
+ * Retrieves the Firebase Admin Auth instance for server-side token verification.
+ */
+export function getAdminAuth() {
+  const app = getFirebaseAdminApp();
+  if (!app) return null;
+  try {
+    return getAuth(app);
+  } catch (err) {
+    console.warn('⚠️ [rtdbService] Failed to getAuth instance:', err.message);
+    return null;
+  }
+}
+

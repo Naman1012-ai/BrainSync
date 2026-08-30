@@ -12,6 +12,7 @@ import { DiscussionPanel } from '../discussions/DiscussionPanel';
 import { ImportToWorkspaceModal } from './ImportToWorkspaceModal';
 import { ConfirmDialog } from '../../components/feedback/ConfirmDialog';
 import { formatTimestamp } from '../../utils/formatting';
+import { safeText } from '../../utils/safeRender';
 import { Globe, ThumbsUp, UserCheck, FolderPlus, Trash2 } from 'lucide-react';
 
 export function PublicIdeaDetailModal({ isOpen, idea, onClose, onToast = () => {} }) {
@@ -185,7 +186,7 @@ export function PublicIdeaDetailModal({ isOpen, idea, onClose, onToast = () => {
                 📌 Problem Statement
               </h2>
               <p className="text-base text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
-                {idea.problemStatement}
+                {safeText(idea.problemStatement)}
               </p>
             </div>
 
@@ -195,7 +196,7 @@ export function PublicIdeaDetailModal({ isOpen, idea, onClose, onToast = () => {
                   💡 Proposed Technical Solution
                 </h2>
                 <p className="text-base text-slate-800 leading-relaxed whitespace-pre-wrap">
-                  {idea.proposedSolution}
+                  {safeText(idea.proposedSolution)}
                 </p>
               </div>
             )}
@@ -206,18 +207,19 @@ export function PublicIdeaDetailModal({ isOpen, idea, onClose, onToast = () => {
                   🛠️ Tech Stack & Technologies
                 </h2>
                 <div className="flex flex-wrap gap-1.5">
-                  {idea.techStack
-                    .split(',')
-                    .map((tech) => tech.trim())
-                    .filter(Boolean)
-                    .map((tech, i) => (
-                      <span
-                        key={i}
-                        className="rounded-md bg-white border border-slate-200 px-3 py-1 text-xs font-mono font-bold text-slate-700 shadow-sm"
-                      >
-                        {tech}
-                      </span>
-                    ))}
+                  {(typeof idea.techStack === 'string'
+                    ? idea.techStack.split(',').map((tech) => tech.trim()).filter(Boolean)
+                    : Array.isArray(idea.techStack)
+                    ? idea.techStack
+                    : Object.values(idea.techStack).flat()
+                  ).map((tech, i) => (
+                    <span
+                      key={i}
+                      className="rounded-md bg-white border border-slate-200 px-3 py-1 text-xs font-mono font-bold text-slate-700 shadow-sm"
+                    >
+                      {safeText(tech)}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}

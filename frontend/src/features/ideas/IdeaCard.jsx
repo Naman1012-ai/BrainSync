@@ -8,6 +8,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
 import { formatTimestamp, truncateText } from '../../utils/formatting';
+import { safeText } from '../../utils/safeRender';
 import {
   MessageCircle,
   Lightbulb,
@@ -156,24 +157,26 @@ export function IdeaCard({ idea, onEdit = null, onDelete = null, onSelectMvp = n
         {/* Title & Excerpt Link */}
         <Link to={targetDetailPath}>
           <h3 className="text-lg font-bold text-slate-900 mb-2 hover:text-indigo-600 transition-colors line-clamp-2">
-            {idea.title}
+            {safeText(idea.title)}
           </h3>
           <p className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed">
-            {truncateText(idea.problemStatement, 180)}
+            {truncateText(safeText(idea.problemStatement), 180)}
           </p>
         </Link>
 
         {/* Tech Stack Tags */}
         {idea.techStack && (
           <div className="flex flex-wrap gap-1 mb-4">
-            {idea.techStack
-              .split(',')
-              .map((tech) => tech.trim())
-              .filter(Boolean)
+            {(typeof idea.techStack === 'string'
+              ? idea.techStack.split(',').map((tech) => tech.trim()).filter(Boolean)
+              : Array.isArray(idea.techStack)
+              ? idea.techStack
+              : Object.values(idea.techStack).flat()
+            )
               .slice(0, 3)
               .map((tech, i) => (
                 <span key={i} className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-mono text-slate-600">
-                  {tech}
+                  {safeText(tech)}
                 </span>
               ))}
           </div>

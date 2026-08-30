@@ -39,7 +39,7 @@ export function Sidebar({ status = 'ideation', isMobileOpen = false, onCloseMobi
         },
         {
           to: `/workspaces/${orgId}/ideas/${ideaId}/dashboard`,
-          label: 'Dashboard',
+          label: 'Progress',
           icon: LayoutDashboard,
         },
         {

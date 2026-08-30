@@ -2,6 +2,7 @@ import { rtdbService } from './rtdbService';
 import { orgService } from './orgService';
 import { ideaService } from './ideaService';
 import { authService } from './authService';
+import { apiClient } from './apiClient';
 import { getErrorMessage } from '../utils/errorMessages';
 
 /**
@@ -269,33 +270,8 @@ export const adminService = {
   /**
    * Create Global Announcement (Admin Only)
    */
-  /**
-   * Create Global Announcement (Admin Only)
-   */
   createAnnouncement: async (adminUid, adminName, payload) => {
-    const id = `anc_${Date.now()}`;
-    const timestamp = Date.now();
-    let expiresAt = null;
-
-    if (payload.expireHours && Number(payload.expireHours) > 0) {
-      expiresAt = timestamp + Number(payload.expireHours) * 3600 * 1000;
-    }
-
-    const data = {
-      id,
-      title: payload.title.trim(),
-      description: payload.description.trim(),
-      category: payload.category || 'Platform Update',
-      priority: payload.priority || 'Normal',
-      targetAudience: payload.targetAudience || 'Entire Platform',
-      isPinned: Boolean(payload.isPinned),
-      expiresAt,
-      createdBy: adminName,
-      createdAt: timestamp,
-    };
-
-    await rtdbService.setData(`announcements/${id}`, data);
-    await adminService.logAdminAudit(adminUid, adminName, 'CREATE_ANNOUNCEMENT', id, `Created announcement "${payload.title}"`);
+    return await apiClient.post('/api/admin/announcements', payload);
   },
 
   /**
@@ -373,50 +349,22 @@ export const adminService = {
    */
   deleteAnnouncement: async (adminUid, adminName, id) => {
     if (!id) return;
-    await rtdbService.removeData(`announcements/${id}`);
-    await adminService.logAdminAudit(adminUid, adminName, 'DELETE_ANNOUNCEMENT', id, 'Deleted global announcement.');
+    return await apiClient.delete(`/api/admin/announcements/${id}`);
   },
 
   /**
    * Toggle Announcement Pinned Status (Admin Only)
    */
   toggleAnnouncementPin: async (adminUid, adminName, id) => {
-    const current = await rtdbService.getData(`announcements/${id}`);
-    const newPinned = !current?.isPinned;
-
-    await rtdbService.updateData(`announcements/${id}`, {
-      isPinned: newPinned,
-      updatedAt: Date.now(),
-    });
-
-    await adminService.logAdminAudit(adminUid, adminName, 'TOGGLE_ANNOUNCEMENT_PIN', id, `Toggled pinned status to ${newPinned}`);
+    if (!id) return;
+    return await apiClient.patch(`/api/admin/announcements/${id}/pin`);
   },
 
   /**
    * Broadcast Notification to Target User Base (Admin Only)
    */
   broadcastNotification: async (adminUid, adminName, { title, message, targetAudience }) => {
-    const usersMap = await rtdbService.getData('users');
-    if (!usersMap) return;
-
-    const userList = Object.values(usersMap).filter(Boolean);
-    const timestamp = Date.now();
-    const notifId = `notif_bcast_${timestamp}`;
-
-    const promises = userList.map((u) => {
-      return rtdbService.setData(`notifications/${u.uid}/${notifId}`, {
-        id: notifId,
-        title: title.trim(),
-        message: message.trim(),
-        type: 'broadcast',
-        isRead: false,
-        createdAt: timestamp,
-        sender: adminName,
-      }).catch(() => {});
-    });
-
-    await Promise.all(promises);
-    await adminService.logAdminAudit(adminUid, adminName, 'BROADCAST_NOTIFICATION', notifId, `Broadcasted notification "${title}" to ${userList.length} users.`);
+    return await apiClient.post('/api/admin/announcements/broadcast', { title, message, targetAudience });
   },
 
   /**
@@ -466,13 +414,7 @@ export const adminService = {
    * Update RBAC Role Permissions (Admin Only)
    */
   updateRbacRolePermissions: async (adminUid, adminName, roleId, permissions) => {
-    const timestamp = Date.now();
-    await rtdbService.updateData(`rbac_roles/${roleId}`, {
-      permissions,
-      updatedAt: timestamp,
-      updatedBy: adminName,
-    });
-    await adminService.logAdminAudit(adminUid, adminName, 'UPDATE_RBAC_ROLE', roleId, `Updated permission matrix for role "${roleId}".`);
+    return await apiClient.patch(`/api/admin/rbac-roles/${roleId}`, { permissions });
   },
 
   /**
@@ -535,15 +477,7 @@ export const adminService = {
    * Update Centralized Platform Settings (Admin Only)
    */
   updatePlatformSettings: async (adminUid, adminName, newSettings) => {
-    const timestamp = Date.now();
-    const payload = {
-      ...newSettings,
-      updatedAt: timestamp,
-      updatedBy: adminName,
-    };
-
-    await rtdbService.setData('platform_settings', payload);
-    await adminService.logAdminAudit(adminUid, adminName, 'UPDATE_PLATFORM_SETTINGS', 'platform_settings', 'Updated platform configuration settings.');
+    return await apiClient.patch('/api/admin/platform-settings', newSettings);
   },
 
   /**
@@ -973,16 +907,7 @@ export const adminService = {
    * Toggle Featured Idea Status (Admin Only)
    */
   toggleIdeaFeatured: async (adminUid, adminName, ideaId, isPublic, orgId) => {
-    const path = isPublic ? `publicIdeas/${ideaId}` : `ideas/${orgId}/${ideaId}`;
-    const current = await rtdbService.getData(path);
-    const newFeatured = !current?.isFeatured;
-
-    await rtdbService.updateData(path, {
-      isFeatured: newFeatured,
-      updatedAt: Date.now(),
-    });
-
-    await adminService.logAdminAudit(adminUid, adminName, 'TOGGLE_FEATURED', ideaId, `Toggled featured status to ${newFeatured}`);
+    return await apiClient.post(`/api/admin/ideas/${ideaId}/toggle-featured`, { isPublic, orgId });
   },
 
   /**
@@ -1200,14 +1125,7 @@ export const adminService = {
    */
   archiveWorkspace: async (adminUid, adminName, workspaceId) => {
     if (!workspaceId) return;
-    const timestamp = Date.now();
-    await rtdbService.updateData(`organizations/${workspaceId}`, {
-      isArchived: true,
-      archivedAt: timestamp,
-      archivedBy: adminName,
-      updatedAt: timestamp,
-    });
-    await adminService.logAdminAudit(adminUid, adminName, 'ARCHIVE_WORKSPACE', workspaceId, 'Archived workspace and marked as read-only.');
+    return await apiClient.post(`/api/admin/workspaces/${workspaceId}/archive`);
   },
 
   /**
@@ -1215,14 +1133,7 @@ export const adminService = {
    */
   restoreWorkspace: async (adminUid, adminName, workspaceId) => {
     if (!workspaceId) return;
-    const timestamp = Date.now();
-    await rtdbService.updateData(`organizations/${workspaceId}`, {
-      isArchived: false,
-      archivedAt: null,
-      archivedBy: null,
-      updatedAt: timestamp,
-    });
-    await adminService.logAdminAudit(adminUid, adminName, 'RESTORE_WORKSPACE', workspaceId, 'Restored workspace from archived state.');
+    return await apiClient.post(`/api/admin/workspaces/${workspaceId}/restore`);
   },
 
   /**
@@ -1230,15 +1141,7 @@ export const adminService = {
    */
   lockWorkspace: async (adminUid, adminName, workspaceId, reason) => {
     if (!workspaceId || !reason) throw new Error('Lock reason is required.');
-    const timestamp = Date.now();
-    await rtdbService.updateData(`organizations/${workspaceId}`, {
-      isLocked: true,
-      lockReason: reason,
-      lockedAt: timestamp,
-      lockedBy: adminName,
-      updatedAt: timestamp,
-    });
-    await adminService.logAdminAudit(adminUid, adminName, 'LOCK_WORKSPACE', workspaceId, `Locked workspace. Reason: ${reason}`);
+    return await apiClient.post(`/api/admin/workspaces/${workspaceId}/lock`, { reason });
   },
 
   /**
@@ -1246,15 +1149,7 @@ export const adminService = {
    */
   unlockWorkspace: async (adminUid, adminName, workspaceId) => {
     if (!workspaceId) return;
-    const timestamp = Date.now();
-    await rtdbService.updateData(`organizations/${workspaceId}`, {
-      isLocked: false,
-      lockReason: null,
-      lockedAt: null,
-      lockedBy: null,
-      updatedAt: timestamp,
-    });
-    await adminService.logAdminAudit(adminUid, adminName, 'UNLOCK_WORKSPACE', workspaceId, 'Unlocked workspace for full collaboration.');
+    return await apiClient.post(`/api/admin/workspaces/${workspaceId}/unlock`);
   },
 
   /**
@@ -1262,13 +1157,7 @@ export const adminService = {
    */
   transferWorkspaceOwnership: async (adminUid, adminName, workspaceId, newOwnerUid, newOwnerName) => {
     if (!workspaceId || !newOwnerUid) throw new Error('New owner is required.');
-    const timestamp = Date.now();
-    await rtdbService.updateData(`organizations/${workspaceId}`, {
-      ownerId: newOwnerUid,
-      ownerName: newOwnerName || 'Owner',
-      updatedAt: timestamp,
-    });
-    await adminService.logAdminAudit(adminUid, adminName, 'TRANSFER_OWNERSHIP', workspaceId, `Transferred ownership to ${newOwnerName} (${newOwnerUid})`);
+    return await apiClient.post(`/api/admin/workspaces/${workspaceId}/transfer-ownership`, { newOwnerUid, newOwnerName });
   },
 
   /**
@@ -1276,8 +1165,7 @@ export const adminService = {
    */
   deleteWorkspaceByAdmin: async (adminUid, adminName, workspaceId) => {
     if (!workspaceId) return;
-    await orgService.purgeWorkspace(workspaceId);
-    await adminService.logAdminAudit(adminUid, adminName, 'DELETE_WORKSPACE', workspaceId, `Cascade deleted workspace and all child sub-trees.`);
+    return await apiClient.delete(`/api/admin/workspaces/${workspaceId}`);
   },
 
   /**
@@ -1521,18 +1409,7 @@ export const adminService = {
    */
   suspendUser: async (adminUid, adminName, userId, reason) => {
     if (!userId || !reason) throw new Error('Suspension reason is required.');
-    const timestamp = Date.now();
-
-    const updates = {
-      isSuspended: true,
-      suspendedReason: reason,
-      suspendedBy: adminName || 'Admin',
-      suspendedAt: timestamp,
-      updatedAt: timestamp,
-    };
-
-    await rtdbService.updateData(`users/${userId}`, updates);
-    await adminService.logAdminAudit(adminUid, adminName, 'SUSPEND_USER', userId, `Suspended user. Reason: ${reason}`);
+    return await apiClient.post(`/api/admin/users/${userId}/suspend`, { reason });
   },
 
   /**
@@ -1540,17 +1417,7 @@ export const adminService = {
    */
   restoreUser: async (adminUid, adminName, userId) => {
     if (!userId) return;
-    const timestamp = Date.now();
-
-    await rtdbService.updateData(`users/${userId}`, {
-      isSuspended: false,
-      suspendedReason: null,
-      suspendedBy: null,
-      suspendedAt: null,
-      updatedAt: timestamp,
-    });
-
-    await adminService.logAdminAudit(adminUid, adminName, 'RESTORE_USER', userId, 'Restored full user account access.');
+    return await apiClient.post(`/api/admin/users/${userId}/restore`);
   },
 
   /**
@@ -1558,16 +1425,7 @@ export const adminService = {
    */
   addUserNote: async (adminUid, adminName, userId, noteText) => {
     if (!userId || !noteText.trim()) return;
-    const noteId = `note_${Date.now()}`;
-    const noteData = {
-      noteId,
-      adminUid,
-      adminName,
-      content: noteText.trim(),
-      createdAt: Date.now(),
-    };
-
-    await rtdbService.setData(`user_admin_notes/${userId}/${noteId}`, noteData);
+    return await apiClient.post(`/api/admin/users/${userId}/note`, { noteText });
   },
 
   /**
@@ -1575,49 +1433,15 @@ export const adminService = {
    */
   addUserWarning: async (adminUid, adminName, userId, reason, severity = 'Medium') => {
     if (!userId || !reason.trim()) return;
-    const warningId = `warn_${Date.now()}`;
-    const timestamp = Date.now();
-
-    const warningData = {
-      warningId,
-      adminUid,
-      adminName,
-      reason: reason.trim(),
-      severity,
-      createdAt: timestamp,
-    };
-
-    await rtdbService.setData(`user_admin_warnings/${userId}/${warningId}`, warningData);
-
-    const notifId = `notif_${timestamp}`;
-    await rtdbService.setData(`notifications/${userId}/${notifId}`, {
-      id: notifId,
-      title: `Official Warning (${severity} Severity)`,
-      message: `Administrator notice: ${reason.trim()}`,
-      type: 'warning',
-      isRead: false,
-      createdAt: timestamp,
-    }).catch(() => {});
-
-    await adminService.logAdminAudit(adminUid, adminName, 'ISSUE_WARNING', userId, `Issued ${severity} warning: ${reason}`);
+    return await apiClient.post(`/api/admin/users/${userId}/warning`, { reason, severity });
   },
 
   /**
-   * Log administrative audit record
+   * Log administrative audit record (Handled authoritatively by backend on privileged mutations)
    */
   logAdminAudit: async (adminUid, adminName, actionType, targetId, details) => {
-    const auditId = `audit_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const auditData = {
-      auditId,
-      adminUid,
-      adminName,
-      actionType,
-      targetId,
-      details,
-      timestamp: Date.now(),
-    };
-
-    await rtdbService.setData(`admin_audit_logs/${auditId}`, auditData).catch(() => {});
+    // Audit logs are written authoritatively by the backend Express router.
+    return Promise.resolve();
   },
 
   /**
@@ -1625,16 +1449,7 @@ export const adminService = {
    */
   deleteUserByAdmin: async (adminUid, adminName, targetUid) => {
     if (!targetUid) return;
-
-    await Promise.all([
-      rtdbService.removeData(`users/${targetUid}`),
-      rtdbService.removeData(`user_reports/${targetUid}`),
-      rtdbService.removeData(`user_admin_notes/${targetUid}`),
-      rtdbService.removeData(`user_admin_warnings/${targetUid}`),
-      rtdbService.removeData(`notifications/${targetUid}`),
-    ]);
-
-    await adminService.logAdminAudit(adminUid, adminName, 'DELETE_USER', targetUid, `Deleted user profile and index records.`);
+    return await apiClient.delete(`/api/admin/users/${targetUid}`);
   },
 
   /**
@@ -1642,27 +1457,6 @@ export const adminService = {
    */
   updateReportStatus: async (reportId, newStatus, targetUid) => {
     if (!reportId || !newStatus) return;
-    const timestamp = Date.now();
-    const updates = {
-      status: newStatus,
-      updatedAt: timestamp,
-    };
-
-    await Promise.all([
-      rtdbService.updateData(`reports/${reportId}`, updates),
-      targetUid ? rtdbService.updateData(`user_reports/${targetUid}/${reportId}`, updates) : Promise.resolve(),
-    ]);
-
-    if (targetUid) {
-      const notifId = `notif_${Date.now()}`;
-      await rtdbService.setData(`notifications/${targetUid}/${notifId}`, {
-        id: notifId,
-        title: 'Report Status Updated',
-        message: `Your issue report (${reportId}) status has been updated to "${newStatus}".`,
-        type: 'info',
-        isRead: false,
-        createdAt: timestamp,
-      }).catch(() => {});
-    }
+    return await apiClient.patch(`/api/admin/reports/${reportId}/status`, { newStatus, targetUid });
   },
 };

@@ -28,13 +28,16 @@ export function DiscussionProvider({ ideaId, isPublic = false, orgId = null, chi
     }
 
     setLoading(true);
-    const unsubscribe = discussionService.subscribeToDiscussions(ideaId, (items) => {
-      setDiscussions(items);
-      setLoading(false);
-    });
+    const unsubscribe = discussionService.subscribeToDiscussions(
+      { orgId, ideaId, isPublic },
+      (items) => {
+        setDiscussions(items);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
-  }, [ideaId]);
+  }, [orgId, ideaId, isPublic]);
 
   const createDiscussion = useCallback(
     async (type, message) => {
@@ -82,39 +85,39 @@ export function DiscussionProvider({ ideaId, isPublic = false, orgId = null, chi
     async (discussionId, updates) => {
       if (!ideaId) return;
       try {
-        await discussionService.updateDiscussion(ideaId, discussionId, updates);
+        await discussionService.updateDiscussion(orgId, ideaId, discussionId, updates, isPublic);
         toast.success('Updated successfully.');
       } catch (err) {
         toast.error(err.message || 'Failed to update.');
       }
     },
-    [ideaId, toast]
+    [orgId, ideaId, isPublic, toast]
   );
 
   const deleteDiscussion = useCallback(
     async (discussionId) => {
       if (!ideaId) return;
       try {
-        await discussionService.deleteDiscussion(ideaId, discussionId, isPublic, orgId);
+        await discussionService.deleteDiscussion(orgId, ideaId, discussionId, isPublic);
         toast.info('Item deleted.');
       } catch (err) {
         toast.error(err.message || 'Failed to delete.');
       }
     },
-    [ideaId, isPublic, orgId, toast]
+    [orgId, ideaId, isPublic, toast]
   );
 
   const toggleAcceptSuggestion = useCallback(
     async (discussionId, currentAccepted) => {
       if (!ideaId) return;
       try {
-        await discussionService.toggleAcceptSuggestion(ideaId, discussionId, currentAccepted);
+        await discussionService.toggleAcceptSuggestion(orgId, ideaId, discussionId, currentAccepted, isPublic);
         toast.success(!currentAccepted ? 'Suggestion accepted!' : 'Suggestion unmarked.');
       } catch (err) {
         toast.error(err.message || 'Failed to update suggestion status.');
       }
     },
-    [ideaId, toast]
+    [orgId, ideaId, isPublic, toast]
   );
 
   return (

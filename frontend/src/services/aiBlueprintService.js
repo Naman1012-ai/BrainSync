@@ -1,28 +1,14 @@
 import { rtdbService } from './rtdbService';
 import { apiClient } from './apiClient';
 import { getErrorMessage } from '../utils/errorMessages';
-import { generateBlueprintPdf } from './blueprintPdfGenerator.js';
+import { generateBlueprintPdf, getSafeFilename } from './blueprintPdfGenerator.js';
 
 /**
- * Helper to deliver a generated Blob file across Desktop and Mobile Browsers safely.
+ * Direct browser download utility for exporting Blueprint files.
+ * Generates an ObjectURL and triggers a download attribute click.
+ * Strictly does NOT trigger Web Share or WhatsApp.
  */
-async function deliverFile(blob, filename, mimeType) {
-  try {
-    const file = new File([blob], filename, { type: mimeType });
-    if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        files: [file],
-        title: filename,
-      });
-      return { success: true, method: 'share' };
-    }
-  } catch (shareErr) {
-    if (shareErr.name === 'AbortError') {
-      return { success: true, method: 'cancelled' };
-    }
-    console.warn('[aiBlueprintService] Web Share API skipped/failed:', shareErr);
-  }
-
+export function downloadFile(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -31,28 +17,35 @@ async function deliverFile(blob, filename, mimeType) {
   document.body.appendChild(link);
   link.click();
 
-  const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (isMobile) {
-    setTimeout(() => {
-      try {
-        const newWin = window.open(url, '_blank');
-        if (!newWin) {
-          window.location.href = url;
-        }
-      } catch (e) {
-        console.warn('[aiBlueprintService] Mobile window open fallback:', e);
-      }
-    }, 300);
-  }
-
   setTimeout(() => {
     if (document.body.contains(link)) {
       document.body.removeChild(link);
     }
     URL.revokeObjectURL(url);
-  }, 10000);
+  }, 1000);
 
   return { success: true, method: 'download' };
+}
+
+/**
+ * Standalone explicit share utility for native device share sheet when specifically requested.
+ */
+export async function shareFile(blob, filename, mimeType, title = 'Convia Blueprint') {
+  if (typeof navigator !== 'undefined' && navigator.canShare) {
+    try {
+      const file = new File([blob], filename, { type: mimeType });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title,
+        });
+        return { success: true, method: 'share' };
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return { success: true, method: 'cancelled' };
+    }
+  }
+  return downloadFile(blob, filename);
 }
 
 /**
@@ -60,6 +53,264 @@ async function deliverFile(blob, filename, mimeType) {
  * Acts as the boundary between Frontend UI and Backend Express Server.
  */
 export const aiBlueprintService = {
+  /**
+   * Authoritatively fetches the active Blueprint document or specific version snapshot from backend.
+   */
+  fetchActiveBlueprint: async (workspaceId, userUid, targetVersion = null) => {
+    if (!workspaceId || !userUid) {
+      throw new Error('Workspace ID and User UID are required.');
+    }
+    return await apiClient.post('/api/blueprint/active', {
+      workspaceId,
+      userUid,
+      targetVersion: targetVersion || undefined,
+    });
+  },
+
+  /**
+   * Authoritatively fetches all persisted Blueprint version metadata from backend.
+   */
+  fetchBlueprintVersions: async (workspaceId, userUid) => {
+    if (!workspaceId || !userUid) {
+      throw new Error('Workspace ID and User UID are required.');
+    }
+    return await apiClient.post('/api/blueprint/versions', {
+      workspaceId,
+      userUid,
+    });
+  },
+
+  /**
+   * Synchronizes Blueprint planned tasks into the Task Board execution layer.
+   * Authoritatively calls backend endpoint with resilient client-side fallback.
+   */
+  syncBlueprintTasks: async (workspaceId, userUid, targetVersion = null) => {
+    if (!workspaceId || !userUid) {
+      throw new Error('Workspace ID and User UID are required.');
+    }
+
+    const versionStr = targetVersion && typeof targetVersion === 'object'
+      ? (targetVersion.version || targetVersion.versionId || targetVersion.key || targetVersion.id)
+      : targetVersion;
+
+    try {
+      return await apiClient.post('/api/blueprint/sync-tasks', {
+        workspaceId,
+        userUid,
+        targetVersion: versionStr || undefined,
+      });
+    } catch (apiErr) {
+      if (apiErr.code === 'BACKEND_UNAVAILABLE' || apiErr.code === 'ENDPOINT_NOT_FOUND' || apiErr.code === 'HTML_RESPONSE_ERROR') {
+        console.warn('⚠️ [aiBlueprintService] Backend server offline or returned HTML fallback. Executing client-side resilient synchronization...', apiErr.message);
+        return await aiBlueprintService.clientSyncBlueprintTasks(workspaceId, userUid, versionStr);
+      }
+      throw apiErr;
+    }
+  },
+
+  /**
+   * Resilient Client-Side Fallback Synchronization Handler.
+   * Guarantees idempotent Task Board synchronization even when Express backend is unreachable.
+   */
+  clientSyncBlueprintTasks: async (workspaceId, userUid) => {
+    const [org, wsMeta] = await Promise.all([
+      rtdbService.getData(`organizations/${workspaceId}`),
+      rtdbService.getData(`workspaces/${workspaceId}/metadata`),
+    ]);
+
+    let activeMvpId = org?.activeProjectId || org?.selectedIdeaId || org?.activeMvpId || wsMeta?.selectedIdeaId;
+    if (!activeMvpId) {
+      const allIdeas = (await rtdbService.getData(`ideas/${workspaceId}`)) || {};
+      const selectedIdea = Object.values(allIdeas).find(
+        (i) => i && (i.isSelected === true || i.status === 'Selected MVP' || i.isMvp === true)
+      );
+      if (selectedIdea) {
+        activeMvpId = selectedIdea.id || selectedIdea.ideaId;
+      }
+    }
+
+    let bp = null;
+    if (activeMvpId) {
+      bp = await rtdbService.getData(`blueprints/${workspaceId}/${activeMvpId}`);
+    }
+    if (!bp || !bp.content) {
+      bp = (await rtdbService.getData(`blueprints/${workspaceId}/current`)) || 
+           (await rtdbService.getData(`blueprints/${workspaceId}/active`));
+    }
+    if (!bp || !bp.content) {
+      const rawRoot = await rtdbService.getData(`blueprints/${workspaceId}`);
+      if (rawRoot && (rawRoot.content || rawRoot.projectOverview)) {
+        bp = rawRoot;
+      } else if (activeMvpId && rawRoot?.[activeMvpId]?.content) {
+        bp = rawRoot[activeMvpId];
+      }
+    }
+
+    if (!bp || !bp.content) {
+      throw new Error('No active Blueprint found for this workspace. Please generate a Blueprint first.');
+    }
+
+    const v2 = bp.rawV2Content || bp.content?.rawV2Content || bp.content?.__v2Content || bp.content || {};
+    const execution = v2.execution || {};
+    const plannedTasks = Array.isArray(execution.tasks) ? execution.tasks : [];
+
+    if (plannedTasks.length === 0) {
+      return {
+        success: true,
+        message: 'No planned tasks found in Blueprint to synchronize.',
+        totalPlannedTasks: 0,
+        createdCount: 0,
+        updatedCount: 0,
+        preservedCount: 0,
+        totalExecutionTasks: 0,
+      };
+    }
+
+    const timestamp = Date.now();
+    const blueprintVersion = String(bp.version || '1.0');
+    const existingTasksObj = (await rtdbService.getData(`tasks/${workspaceId}`)) || {};
+    const existingTasks = Object.values(existingTasksObj).filter((t) => t && !t.isDeleted);
+
+    const existingByBlueprintTaskId = new Map();
+    const existingByTaskId = new Map();
+
+    existingTasks.forEach((t) => {
+      if (t.blueprintTaskId) existingByBlueprintTaskId.set(t.blueprintTaskId, t);
+      if (t.taskId) existingByTaskId.set(t.taskId, t);
+    });
+
+    let createdCount = 0;
+    let updatedCount = 0;
+    let preservedCount = 0;
+
+    const tasksToSave = {};
+    const updatedPlannedTasks = [];
+
+    for (const bpTask of plannedTasks) {
+      const bpTaskId = bpTask.id || `TASK-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const existingTask =
+        existingByBlueprintTaskId.get(bpTaskId) ||
+        (bpTask.convertedTaskId ? existingByTaskId.get(bpTask.convertedTaskId) : null);
+
+      if (existingTask) {
+        const preservedStatus = existingTask.status || 'Todo';
+        const preservedAssignee = existingTask.assignedTo || bpTask.assignedUserId || '';
+        const preservedAssigneeName = existingTask.assignedToName || bpTask.assignedUserName || (preservedAssignee ? 'Assigned Member' : 'Unassigned');
+        const isCompleted = preservedStatus === 'Completed' || preservedStatus === 'completed';
+
+        const updatedExecutionTask = {
+          ...existingTask,
+          executionTaskId: existingTask.taskId,
+          blueprintId: existingTask.blueprintId || bp.blueprintId || `bp_${workspaceId}_${activeMvpId}`,
+          blueprintTaskId: bpTaskId,
+          sourceBlueprintTaskId: existingTask.sourceBlueprintTaskId || bpTaskId,
+          blueprintVersion: existingTask.blueprintVersion || blueprintVersion,
+          sourceBlueprintVersionId: existingTask.sourceBlueprintVersionId || blueprintVersion,
+          projectId: activeMvpId || 'active_project',
+          orgId: workspaceId,
+          workspaceId,
+          title: bpTask.title || existingTask.title,
+          description: bpTask.description || existingTask.description || '',
+          estimatedEffortHours: Number(bpTask.estimatedEffortHours) || Number(existingTask.estimatedEffortHours) || 0,
+          priority: existingTask.priority || bpTask.priority || 'Medium',
+          status: preservedStatus,
+          assignedTo: preservedAssignee,
+          assignedToName: preservedAssigneeName,
+          recommendedRoleId: bpTask.recommendedRoleId || existingTask.recommendedRoleId || null,
+          requiredCapabilities: bpTask.requiredCapabilities || existingTask.requiredCapabilities || [],
+          isCriticalPath: Boolean(bpTask.isCriticalPath ?? existingTask.isCriticalPath),
+          updatedAt: timestamp,
+          completedAt: isCompleted ? (existingTask.completedAt || timestamp) : null,
+          isDeleted: false,
+        };
+
+        tasksToSave[`tasks/${workspaceId}/${existingTask.taskId}`] = updatedExecutionTask;
+        updatedCount += 1;
+        if (isCompleted || existingTask.status !== 'Todo' || existingTask.assignedTo) {
+          preservedCount += 1;
+        }
+
+        updatedPlannedTasks.push({
+          ...bpTask,
+          id: bpTaskId,
+          convertedTaskId: existingTask.taskId,
+          assignedUserId: preservedAssignee || null,
+          assignedUserName: preservedAssignee ? preservedAssigneeName : null,
+          status: preservedStatus,
+        });
+      } else {
+        const newTaskId = `task_${timestamp}_${Math.random().toString(36).substring(2, 7)}`;
+        const assignedUserId = bpTask.assignedUserId || '';
+        const assignedUserName = bpTask.assignedUserName || (assignedUserId ? 'Assigned Member' : 'Unassigned');
+
+        const newExecutionTask = {
+          taskId: newTaskId,
+          executionTaskId: newTaskId,
+          blueprintId: bp.blueprintId || `bp_${workspaceId}_${activeMvpId}`,
+          blueprintTaskId: bpTaskId,
+          sourceBlueprintTaskId: bpTaskId,
+          blueprintVersion,
+          sourceBlueprintVersionId: blueprintVersion,
+          orgId: workspaceId,
+          workspaceId,
+          projectId: activeMvpId || 'active_project',
+          title: bpTask.title || 'Untitled Blueprint Task',
+          description: bpTask.description || '',
+          estimatedEffortHours: Number(bpTask.estimatedEffortHours) || 0,
+          priority: bpTask.priority || 'Medium',
+          status: bpTask.status === 'Completed' ? 'Completed' : 'Todo',
+          assignedTo: assignedUserId,
+          assignedToName: assignedUserName,
+          recommendedRoleId: bpTask.recommendedRoleId || null,
+          requiredCapabilities: bpTask.requiredCapabilities || [],
+          isCriticalPath: Boolean(bpTask.isCriticalPath),
+          createdBy: userUid,
+          createdByName: 'AI Blueprint Planner',
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          completedAt: bpTask.status === 'Completed' ? timestamp : null,
+          isDeleted: false,
+        };
+
+        tasksToSave[`tasks/${workspaceId}/${newTaskId}`] = newExecutionTask;
+        createdCount += 1;
+
+        updatedPlannedTasks.push({
+          ...bpTask,
+          id: bpTaskId,
+          convertedTaskId: newTaskId,
+        });
+      }
+    }
+
+    if (Object.keys(tasksToSave).length > 0) {
+      await rtdbService.updateData('/', tasksToSave);
+    }
+
+    if (execution.tasks) {
+      execution.tasks = updatedPlannedTasks;
+      const bpUpdate = {
+        updatedAt: timestamp,
+        lastTaskSyncAt: timestamp,
+        content: bp.content,
+      };
+      await Promise.all([
+        rtdbService.updateData(`blueprints/${workspaceId}/${activeMvpId}`, bpUpdate).catch(() => {}),
+        rtdbService.updateData(`blueprints/${workspaceId}/current`, bpUpdate).catch(() => {}),
+      ]);
+    }
+
+    return {
+      success: true,
+      message: `Synchronized ${plannedTasks.length} tasks (${createdCount} created, ${updatedCount} updated).`,
+      totalPlannedTasks: plannedTasks.length,
+      createdCount,
+      updatedCount,
+      preservedCount,
+      totalExecutionTasks: existingTasks.length + createdCount,
+    };
+  },
+
   /**
    * Client-facing method to trigger AI Blueprint Generation via backend endpoint.
    */
@@ -81,18 +332,178 @@ export const aiBlueprintService = {
   },
 
   /**
-   * Client-facing method to save manual Blueprint updates via backend endpoint.
+   * Phase 5 & Phase 9: Client-facing method to save manual Blueprint updates with optimistic concurrency metadata.
    */
-  updateBlueprint: async (workspaceId, userUid, updatedContent) => {
-    if (!workspaceId || !userUid || !updatedContent) {
+  updateBlueprint: async (workspaceId, userUid, payload) => {
+    if (!workspaceId || !userUid || !payload) {
       throw new Error('Workspace ID, User UID, and Updated Content payload are required.');
     }
-    return await apiClient.put('/api/blueprint/update', { workspaceId, userUid, updatedContent });
+    return await apiClient.put('/api/blueprint/update', { workspaceId, userUid, updatedContent: payload });
   },
 
   /**
-   * Phase 6: Client-facing method to export validated Blueprint JSON.
+   * Phase 9: Client-facing method to activate a historical Blueprint version.
    */
+  activateBlueprintVersion: async (workspaceId, userUid, targetVersionKey) => {
+    if (!workspaceId || !userUid || !targetVersionKey) {
+      throw new Error('Workspace ID, User UID, and Target Version Key are required.');
+    }
+    return await apiClient.post('/api/blueprint/version/activate', {
+      workspaceId,
+      userUid,
+      targetVersion: targetVersionKey,
+    });
+  },
+
+  /**
+   * Phase 9: Client-facing method to check project staleness and change impact.
+   */
+  checkBlueprintStaleness: async (workspaceId, userUid) => {
+    if (!workspaceId || !userUid) {
+      throw new Error('Workspace ID and User UID are required.');
+    }
+    return await apiClient.post('/api/blueprint/check-staleness', {
+      workspaceId,
+      userUid,
+    });
+  },
+
+  /**
+   * Phase 9: Client-facing method to compare two Blueprint versions.
+   */
+  compareBlueprintVersions: async (workspaceId, userUid, versionA, versionB) => {
+    if (!workspaceId || !userUid || !versionA || !versionB) {
+      throw new Error('Workspace ID, User UID, versionA, and versionB are required.');
+    }
+    return await apiClient.post('/api/blueprint/version/compare', {
+      workspaceId,
+      userUid,
+      versionA,
+      versionB,
+    });
+  },
+
+  /**
+   * Phase 11: Client-facing method to formally approve and activate a Blueprint version.
+   */
+  approveBlueprintVersion: async (workspaceId, userUid, targetVersionKey) => {
+    if (!workspaceId || !userUid || !targetVersionKey) {
+      throw new Error('Workspace ID, User UID, and Target Version Key are required.');
+    }
+    const versionStr = typeof targetVersionKey === 'object'
+      ? (targetVersionKey.version || targetVersionKey.versionId || targetVersionKey.key || targetVersionKey.id)
+      : targetVersionKey;
+
+    return await apiClient.post('/api/blueprint/version/approve', {
+      workspaceId,
+      userUid,
+      targetVersion: versionStr,
+    });
+  },
+
+  /**
+   * Phase 11: Client-facing method to check approval readiness checklist and preconditions.
+   */
+  checkApprovalReadiness: async (workspaceId, userUid, targetVersionKey) => {
+    if (!workspaceId || !userUid) {
+      throw new Error('Workspace ID and User UID are required.');
+    }
+    const versionStr = targetVersionKey && typeof targetVersionKey === 'object'
+      ? (targetVersionKey.version || targetVersionKey.versionId || targetVersionKey.key || targetVersionKey.id)
+      : targetVersionKey;
+
+    return await apiClient.post('/api/blueprint/version/approval-readiness', {
+      workspaceId,
+      userUid,
+      targetVersion: versionStr || null,
+    });
+  },
+
+  /**
+   * Phase 5: Client-facing method to assign a Blueprint task (Accepting recommendation or manual assignment).
+   */
+  assignBlueprintTask: async (workspaceId, userUid, taskId, assignedUserId) => {
+    if (!workspaceId || !userUid || !taskId) {
+      throw new Error('Workspace ID, User UID, and Task ID are required.');
+    }
+    return await apiClient.post('/api/blueprint/assign-task', {
+      workspaceId,
+      userUid,
+      taskId,
+      assignedUserId: assignedUserId || null,
+    });
+  },
+
+  /**
+   * Phase 7: Client-facing method to approve a proposed decision.
+   */
+  approveDecision: async (workspaceId, userUid, decisionId) => {
+    if (!workspaceId || !userUid || !decisionId) {
+      throw new Error('Workspace ID, User UID, and Decision ID are required.');
+    }
+    return await apiClient.post('/api/blueprint/decision/approve', {
+      workspaceId,
+      userUid,
+      decisionId,
+    });
+  },
+
+  /**
+   * Phase 7: Client-facing method to reject a proposed decision.
+   */
+  rejectDecision: async (workspaceId, userUid, decisionId) => {
+    if (!workspaceId || !userUid || !decisionId) {
+      throw new Error('Workspace ID, User UID, and Decision ID are required.');
+    }
+    return await apiClient.post('/api/blueprint/decision/reject', {
+      workspaceId,
+      userUid,
+      decisionId,
+    });
+  },
+
+  /**
+   * Phase 7: Client-facing method to create an authoritative decision.
+   */
+  createDecision: async (workspaceId, userUid, decisionData) => {
+    if (!workspaceId || !userUid || !decisionData?.decision) {
+      throw new Error('Workspace ID, User UID, and Decision text are required.');
+    }
+    return await apiClient.post('/api/blueprint/decision/create', {
+      workspaceId,
+      userUid,
+      ...decisionData,
+    });
+  },
+
+  /**
+   * Phase 7: Client-facing method to approve a change recommendation.
+   */
+  approveChangeRecommendation: async (workspaceId, userUid, recommendationId) => {
+    if (!workspaceId || !userUid || !recommendationId) {
+      throw new Error('Workspace ID, User UID, and Recommendation ID are required.');
+    }
+    return await apiClient.post('/api/blueprint/change-recommendation/approve', {
+      workspaceId,
+      userUid,
+      recommendationId,
+    });
+  },
+
+  /**
+   * Phase 7: Client-facing method to reject a change recommendation.
+   */
+  rejectChangeRecommendation: async (workspaceId, userUid, recommendationId) => {
+    if (!workspaceId || !userUid || !recommendationId) {
+      throw new Error('Workspace ID, User UID, and Recommendation ID are required.');
+    }
+    return await apiClient.post('/api/blueprint/change-recommendation/reject', {
+      workspaceId,
+      userUid,
+      recommendationId,
+    });
+  },
+
   /**
    * Phase 6: Client-facing method to export validated Blueprint JSON.
    */
@@ -103,15 +514,25 @@ export const aiBlueprintService = {
     let jsonString = '';
     let filename = '';
 
-    if (localBlueprint && localBlueprint.content) {
-      jsonString = JSON.stringify(localBlueprint, null, 2);
-      const safeTitle = String(localBlueprint.ideaTitle || 'project')
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '') || 'project';
-      filename = `convia-blueprint-${safeTitle}-v${localBlueprint.version || '1.0'}.json`;
+    if (localBlueprint && (localBlueprint.content || localBlueprint.rawV2Content)) {
+      const canonicalContent = localBlueprint.rawV2Content || localBlueprint.__v2Content || localBlueprint.content;
+      const cleanExportDoc = {
+        blueprintId: localBlueprint.blueprintId || `bp_${workspaceId}`,
+        workspaceId,
+        mvpIdeaId: localBlueprint.mvpIdeaId || localBlueprint.ideaId,
+        version: String(localBlueprint.version || '1.0'),
+        schemaVersion: canonicalContent?.schemaVersion || 2,
+        status: 'completed',
+        lastModifiedSource: localBlueprint.lastModifiedSource || 'ai_generation',
+        generatedAt: localBlueprint.generatedAt || localBlueprint.createdAt || Date.now(),
+        updatedAt: localBlueprint.updatedAt || Date.now(),
+        ideaTitle: localBlueprint.ideaTitle || 'Project Blueprint',
+        problemStatement: localBlueprint.problemStatement || '',
+        content: canonicalContent,
+      };
+
+      jsonString = JSON.stringify(cleanExportDoc, null, 2);
+      filename = getSafeFilename(localBlueprint.ideaTitle || 'project', localBlueprint.version || '1.0', 'json');
     } else {
       const result = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid, targetVersion });
       jsonString = result.jsonString || JSON.stringify(result.exportData, null, 2);
@@ -119,13 +540,13 @@ export const aiBlueprintService = {
     }
 
     const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
-    await deliverFile(blob, filename, 'application/json');
+    downloadFile(blob, filename);
 
     return { success: true, filename };
   },
 
   /**
-   * Phase 6: Client-facing method to export validated Blueprint PDF.
+   * Phase 6 & Phase 12: Client-facing method to export validated Blueprint PDF.
    */
   exportBlueprintPdf: async (workspaceId, userUid, orgName = 'Workspace', targetVersion = null, localBlueprint = null) => {
     if (!workspaceId || !userUid) {
@@ -133,19 +554,17 @@ export const aiBlueprintService = {
     }
 
     let blueprintDoc = localBlueprint;
-    let filename = '';
-
-    if (!blueprintDoc || !blueprintDoc.content) {
+    if (!blueprintDoc || (!blueprintDoc.content && !blueprintDoc.rawV2Content)) {
       const jsonResult = await apiClient.post('/api/blueprint/export-json', { workspaceId, userUid, targetVersion });
-      blueprintDoc = jsonResult.exportData;
+      blueprintDoc = jsonResult?.data?.exportData || jsonResult?.exportData;
     }
 
     const pdfResult = generateBlueprintPdf(blueprintDoc, orgName);
     const doc = pdfResult.doc;
-    filename = pdfResult.filename;
+    const filename = pdfResult.filename;
 
     const pdfBlob = doc.output('blob');
-    await deliverFile(pdfBlob, filename, 'application/pdf');
+    downloadFile(pdfBlob, filename);
 
     return {
       success: true,

@@ -90,11 +90,11 @@ export const blueprintService = {
         },
       };
 
-      // 5. Save Blueprint under both per-MVP node and legacy root node for maximum compatibility
+      // 5. Save Initial MVP Blueprint under per-MVP node and active pointers
       await Promise.all([
         rtdbService.setData(`blueprints/${orgId}/${winningIdeaId}`, blueprintData),
         rtdbService.setData(`blueprints/${orgId}/current`, blueprintData),
-        rtdbService.setData(`blueprints/${orgId}`, blueprintData),
+        rtdbService.setData(`blueprints/${orgId}/active`, blueprintData),
       ]);
 
       // 6. Archive other organization ideas & mark winning idea as selected
@@ -120,11 +120,15 @@ export const blueprintService = {
         rtdbService.updateData(`organizations/${orgId}`, {
           status: 'project',
           activeProjectId: winningIdeaId,
+          selectedIdeaId: winningIdeaId,
+          activeBlueprintId: blueprintData.blueprintId,
           updatedAt: timestamp,
         }),
         rtdbService.updateData(`workspaces/${orgId}/metadata`, {
           status: 'project',
+          activeProjectId: winningIdeaId,
           selectedIdeaId: winningIdeaId,
+          activeBlueprintId: blueprintData.blueprintId,
           updatedAt: timestamp,
         }),
       ]);
@@ -137,29 +141,75 @@ export const blueprintService = {
   },
 
   /**
+   * Resilient helper to extract a valid Blueprint document from any raw RTDB node or dictionary.
+   */
+  extractValidBlueprint: (raw, targetMvpId = null) => {
+    if (!raw || typeof raw !== 'object') return null;
+
+    // Case 1: Direct single Blueprint document with content/schema
+    if (raw.content || raw.projectOverview || raw.schemaVersion || raw.status === 'completed' || raw.status === 'generating') {
+      return raw;
+    }
+
+    // Case 2: Target MVP child inside dictionary
+    if (targetMvpId && raw[targetMvpId] && typeof raw[targetMvpId] === 'object') {
+      const targetChild = raw[targetMvpId];
+      if (targetChild.content || targetChild.projectOverview || targetChild.schemaVersion || targetChild.status) {
+        return targetChild;
+      }
+    }
+
+    // Case 3: Container object with `current` or `active` pointer
+    if (raw.current && typeof raw.current === 'object' && (raw.current.content || raw.current.projectOverview || raw.current.status)) {
+      return raw.current;
+    }
+    if (raw.active && typeof raw.active === 'object' && (raw.active.content || raw.active.projectOverview || raw.active.status)) {
+      return raw.active;
+    }
+
+    // Case 4: Search child values for best candidate
+    const childDocs = Object.values(raw).filter(
+      (v) => v && typeof v === 'object' && (v.content || v.projectOverview || v.schemaVersion || v.status === 'completed')
+    );
+    if (childDocs.length > 0) {
+      childDocs.sort((a, b) => (b.updatedAt || b.generatedAt || 0) - (a.updatedAt || a.generatedAt || 0));
+      return childDocs[0];
+    }
+
+    return null;
+  },
+
+  /**
    * Fetch single Project Blueprint snapshot for a specific MVP idea or workspace.
    */
   getBlueprint: async (orgId, mvpIdeaId = null) => {
     if (!orgId) return null;
-    if (mvpIdeaId) {
-      const specificBp = await rtdbService.getData(`blueprints/${orgId}/${mvpIdeaId}`);
-      if (specificBp) return specificBp;
+    try {
+      if (mvpIdeaId) {
+        const specificBp = await rtdbService.getData(`blueprints/${orgId}/${mvpIdeaId}`);
+        const extracted = blueprintService.extractValidBlueprint(specificBp, mvpIdeaId);
+        if (extracted) return extracted;
+      }
+
+      const currentBp = await rtdbService.getData(`blueprints/${orgId}/current`);
+      const extractedCurrent = blueprintService.extractValidBlueprint(currentBp);
+      if (extractedCurrent) return extractedCurrent;
+
+      const rootBp = await rtdbService.getData(`blueprints/${orgId}`);
+      return blueprintService.extractValidBlueprint(rootBp, mvpIdeaId);
+    } catch (err) {
+      console.error('[blueprintService] getBlueprint error:', err);
+      return null;
     }
-    return await rtdbService.getData(`blueprints/${orgId}`);
   },
 
   /**
    * Real-time subscription to Project Blueprint document for a given workspace and MVP idea.
    */
   subscribeToBlueprint: (orgId, mvpIdeaId, callback) => {
-    // If only 2 arguments are passed (orgId, callback)
     if (typeof mvpIdeaId === 'function') {
-      const cb = mvpIdeaId;
-      if (!orgId) {
-        cb(null);
-        return () => {};
-      }
-      return rtdbService.subscribe(`blueprints/${orgId}`, cb);
+      callback = mvpIdeaId;
+      mvpIdeaId = null;
     }
 
     if (!orgId) {
@@ -167,26 +217,50 @@ export const blueprintService = {
       return () => {};
     }
 
+    let unsubMvp = null;
+    let unsubCurrent = null;
+    let unsubRoot = null;
+
+    const handlePayload = (raw) => {
+      const valid = blueprintService.extractValidBlueprint(raw, mvpIdeaId);
+      if (valid) {
+        callback(valid);
+        return true;
+      }
+      return false;
+    };
+
     if (mvpIdeaId) {
-      // First try per-MVP path `blueprints/${orgId}/${mvpIdeaId}`
-      const unsubMvp = rtdbService.subscribe(`blueprints/${orgId}/${mvpIdeaId}`, (data) => {
-        if (data) {
-          callback(data);
-        } else {
-          // Fallback to `blueprints/${orgId}` root if per-MVP path is empty
-          rtdbService.getData(`blueprints/${orgId}`).then((rootBp) => {
-            if (rootBp && (rootBp.mvpIdeaId === mvpIdeaId || rootBp.ideaId === mvpIdeaId || !rootBp.mvpIdeaId)) {
-              callback(rootBp);
-            } else {
+      unsubMvp = rtdbService.subscribe(`blueprints/${orgId}/${mvpIdeaId}`, (data) => {
+        if (!handlePayload(data)) {
+          rtdbService.getData(`blueprints/${orgId}/current`).then((cur) => {
+            if (!handlePayload(cur)) {
+              rtdbService.getData(`blueprints/${orgId}`).then((root) => {
+                if (!handlePayload(root)) {
+                  callback(null);
+                }
+              });
+            }
+          });
+        }
+      });
+    } else {
+      unsubCurrent = rtdbService.subscribe(`blueprints/${orgId}/current`, (data) => {
+        if (!handlePayload(data)) {
+          unsubRoot = rtdbService.subscribe(`blueprints/${orgId}`, (rootData) => {
+            if (!handlePayload(rootData)) {
               callback(null);
             }
           });
         }
       });
-      return unsubMvp;
     }
 
-    return rtdbService.subscribe(`blueprints/${orgId}`, callback);
+    return () => {
+      if (unsubMvp) unsubMvp();
+      if (unsubCurrent) unsubCurrent();
+      if (unsubRoot) unsubRoot();
+    };
   },
 
   /**
@@ -205,38 +279,72 @@ export const blueprintService = {
       return () => {};
     }
 
-    const parseList = (versionsObj) => {
-      if (!versionsObj || typeof versionsObj !== 'object') return [];
-      const list = Object.values(versionsObj)
-        .filter((v) => v && typeof v === 'object' && (v.status === 'completed' || v.version || v.projectOverview || v.content))
-        .map((v) => ({
-          ...v,
-          versionId: v.versionId || v.version,
-          version: String(v.version || v.versionId || '1.0'),
-          status: v.status || 'completed',
-          timestamp: v.timestamp || v.generatedAt || v.updatedAt || Date.now(),
-          content: v.content || (v.projectOverview ? v : null),
-        }));
+    const parseVersions = (raw) => {
+      if (!raw || typeof raw !== 'object') return [];
+      const versionsMap = {};
+
+      const sourceObj = raw.versions && typeof raw.versions === 'object' ? raw.versions : raw;
+
+      Object.entries(sourceObj).forEach(([k, v]) => {
+        if (v && typeof v === 'object' && (v.content || v.projectOverview || v.status || v.version || v.schemaVersion)) {
+          const vNum = String(v.version || v.versionId || k.replace(/^v/, '').replace(/_/g, '.') || '1.0');
+          const vKey = `v${vNum.replace(/\./g, '_')}`;
+          versionsMap[vKey] = {
+            ...v,
+            key: vKey,
+            versionId: v.versionId || vNum,
+            version: vNum,
+            status: v.status || 'completed',
+            createdAt: v.createdAt || v.generatedAt || v.updatedAt || Date.now(),
+            updatedAt: v.updatedAt || v.generatedAt || Date.now(),
+            content: v.content || (v.projectOverview ? v : null),
+            lastModifiedSource: v.lastModifiedSource || 'ai_generation',
+            summary: v.summary || `Version ${vNum}`,
+          };
+        }
+      });
+
+      const list = Object.values(versionsMap);
       list.sort((a, b) => (parseFloat(b.version) || 0) - (parseFloat(a.version) || 0));
       return list;
     };
 
-    if (mvpIdeaId) {
-      return rtdbService.subscribe(`blueprints/${orgId}/${mvpIdeaId}/versions`, (versionsObj) => {
-        const list = parseList(versionsObj);
-        if (list.length > 0) {
-          callback(list);
-        } else {
-          // Fallback to workspace root versions path
-          rtdbService.getData(`blueprints/${orgId}/versions`).then((rootVersionsObj) => {
-            callback(parseList(rootVersionsObj));
-          });
-        }
-      });
-    }
+    const unsubMvp = mvpIdeaId
+      ? rtdbService.subscribe(`blueprints/${orgId}/${mvpIdeaId}/versions`, (mvpVers) => {
+          const list = parseVersions(mvpVers);
+          if (list.length > 0) {
+            callback(list);
+          } else {
+            rtdbService.getData(`blueprints/${orgId}/versions`).then((rootVers) => {
+              callback(parseVersions(rootVers));
+            });
+          }
+        })
+      : rtdbService.subscribe(`blueprints/${orgId}/versions`, (rootVers) => {
+          callback(parseVersions(rootVers));
+        });
 
-    return rtdbService.subscribe(`blueprints/${orgId}/versions`, (rootVersionsObj) => {
-      callback(parseList(rootVersionsObj));
-    });
+    return () => {
+      if (unsubMvp) unsubMvp();
+    };
+  },
+
+  /**
+   * Fetch all blueprint versions snapshot once.
+   */
+  getBlueprintVersions: async (orgId, mvpIdeaId = null) => {
+    if (!orgId) return [];
+    try {
+      const path = mvpIdeaId ? `blueprints/${orgId}/${mvpIdeaId}/versions` : `blueprints/${orgId}/versions`;
+      const versionsObj = await rtdbService.getData(path);
+      if (!versionsObj && mvpIdeaId) {
+        const rootVersionsObj = await rtdbService.getData(`blueprints/${orgId}/versions`);
+        return Object.values(rootVersionsObj || {});
+      }
+      return Object.values(versionsObj || {});
+    } catch (err) {
+      console.error('[blueprintService] getBlueprintVersions error:', err);
+      return [];
+    }
   },
 };

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import { useOrg } from '../../hooks/useOrg';
+import { useToast } from '../../hooks/useToast';
 import { TaskProvider, TaskContext } from '../../contexts/TaskContext';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Button } from '../../components/ui/Button';
@@ -16,9 +18,12 @@ import { TaskCard } from '../../features/tasks/TaskCard';
 import { CreateTaskModal } from '../../features/tasks/CreateTaskModal';
 import { EditTaskModal } from '../../features/tasks/EditTaskModal';
 import { Plus, Search, CheckSquare, ListTodo, Sparkles } from 'lucide-react';
+import { aiBlueprintService } from '../../services/aiBlueprintService';
 
 function TaskBoardContent() {
+  const { user } = useAuth();
   const { org } = useOrg();
+  const { toast } = useToast();
   const taskContext = React.useContext(TaskContext);
 
   const {
@@ -38,9 +43,25 @@ function TaskBoardContent() {
   } = taskContext;
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [deletingTask, setDeletingTask] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleSyncBlueprintTasks = async () => {
+    if (!org?.orgId || !user?.uid) return;
+    setIsSyncing(true);
+    try {
+      const res = await aiBlueprintService.syncBlueprintTasks(org.orgId, user.uid);
+      const msg = res?.data?.message || res?.message || 'Blueprint planned tasks synchronized to Task Board.';
+      toast.success(msg);
+    } catch (err) {
+      console.error('[TaskBoardPage] handleSyncBlueprintTasks error:', err);
+      toast.error(err.message || 'Failed to sync Blueprint tasks.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   if (org && org.status !== 'project') {
     return (
@@ -112,6 +133,16 @@ function TaskBoardContent() {
               {completedTasks} of {totalTasks} Tasks Done ({progressPercentage}%)
             </span>
             <Button
+              variant="outline"
+              size="sm"
+              icon={<Sparkles className="h-4 w-4 text-purple-600" />}
+              onClick={handleSyncBlueprintTasks}
+              isLoading={isSyncing}
+              className="shrink-0 border-purple-200 hover:bg-purple-50 text-purple-700 font-bold"
+            >
+              Sync Blueprint Tasks
+            </Button>
+            <Button
               variant="primary"
               size="sm"
               icon={<Plus className="h-4 w-4" />}
@@ -181,11 +212,22 @@ function TaskBoardContent() {
         <EmptyState
           icon={<ListTodo className="h-8 w-8 text-indigo-500" />}
           title="No Sprint Tasks Created Yet"
-          description="Break down your Project Blueprint into actionable build items for team members."
+          description="Break down your Project Blueprint into actionable build items or sync planned technical tasks directly from the AI Blueprint."
           action={
-            <Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>
-              Create First Task
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>
+                Create First Task
+              </Button>
+              <Button
+                variant="outline"
+                icon={<Sparkles className="h-4 w-4 text-purple-600" />}
+                onClick={handleSyncBlueprintTasks}
+                isLoading={isSyncing}
+                className="border-purple-300 hover:bg-purple-50 text-purple-700 font-bold"
+              >
+                Sync Blueprint Tasks
+              </Button>
+            </div>
           }
         />
       ) : (
